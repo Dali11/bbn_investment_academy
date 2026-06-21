@@ -1,0 +1,74 @@
+export type MembershipTier = 'free' | 'member' | 'vip'
+
+export interface Profile {
+    id: string
+    full_name: string | null
+    email: string | null
+    membership_tier: MembershipTier
+    avatar_url: string | null
+    created_at: string
+}
+
+export interface MseCounter {
+    id: number
+    symbol: string
+    company_name: string
+    sector: string | null
+}
+
+export interface MsePrice {
+    id: number
+    counter_id: number
+    price: number
+    change_pct: number | null
+    market_cap: number | null
+    pe_ratio: number | null
+    price_date: string
+}
+
+export interface Analysis {
+    id: string
+    counter_id: number | null
+    title: string
+    content: string
+    price_at_post: number | null
+    pe_at_post: number | null
+    market_cap_at_post: number | null
+    published: boolean
+    created_at: string
+}
+
+export interface Course {
+    id: string
+    title: string
+    description: string | null
+    level: 'beginner' | 'intermediate' | 'advanced'
+    is_free: boolean
+    order_index: number | null
+    published: boolean
+}
+
+export interface Lesson {
+    id: string
+    course_id: string
+    title: string
+    video_url: string | null
+    notes: string | null
+    has_demo: boolean
+    has_quiz: boolean
+    order_index: number | null
+}
+
+export interface SimPortfolio {
+    id: string
+    user_id: string
+    cash_balance: number
+}
+
+export interface SimHolding {
+    id: number
+    portfolio_id: string
+    counter_id: number
+    shares: number
+    avg_buy_price: number
+}
