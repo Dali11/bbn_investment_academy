@@ -46,7 +46,7 @@ export default async function DashboardLayout({
                             href={item.href}
                             className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-amber-50 hover:text-amber-700 transition-colors"
                         >
-                            <span>{item.icon}</span>
+                            {/* <span>{item.icon}</span> */}
                             {item.label}
                         </Link>
                     ))}
@@ -65,7 +65,7 @@ export default async function DashboardLayout({
                             type="submit"
                             className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-red-50 hover:text-red-600 transition-colors"
                         >
-                            <span>🚪</span>
+                            
                             Sign out
                         </button>
                     </form>
