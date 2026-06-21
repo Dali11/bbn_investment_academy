@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import Link from 'next/link'
 
 export default async function MsePage() {
     const supabase = await createClient()
@@ -38,7 +39,11 @@ export default async function MsePage() {
                             const latest = prices?.find(p => p.counter_id === counter.id)
                             return (
                                 <tr key={counter.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                                    <td className="px-4 py-3 font-medium text-amber-600">{counter.symbol}</td>
+                                    <td className="px-4 py-3">
+                                        <Link href={`/mse/${counter.symbol}`} className="font-medium text-amber-600 hover:underline">
+                                            {counter.symbol}
+                                        </Link>
+                                    </td>
                                     <td className="px-4 py-3 text-gray-700">{counter.company_name}</td>
                                     <td className="px-4 py-3 text-gray-400 text-xs">{counter.sector}</td>
                                     <td className="px-4 py-3 text-right text-gray-900">
