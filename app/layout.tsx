@@ -3,7 +3,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   title: 'BBN Investment Academy',
-  description: 'Learn to grow your money on the Malawi Stock Exchange',
+  description: 'Malawi Stock Exchange analysis, courses, and community.',
 }
 
 export default function RootLayout({

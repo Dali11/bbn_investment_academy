@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
 
 export default function AdminPage() {
@@ -10,8 +10,12 @@ export default function AdminPage() {
     const [price, setPrice] = useState('')
     const [pe, setPe] = useState('')
     const [marketCap, setMarketCap] = useState('')
+    const [imageFile, setImageFile] = useState<File | null>(null)
+    const [imagePreview, setImagePreview] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const fileInputRef = useRef<HTMLInputElement>(null)
     const supabase = createClient()
 
     useEffect(() => {
@@ -20,19 +24,69 @@ export default function AdminPage() {
         })
     }, [])
 
+    function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        if (!file) return
+
+        if (!file.type.startsWith('image/')) {
+            setError('Please select an image file')
+            return
+        }
+        if (file.size > 5 * 1024 * 1024) {
+            setError('Image must be under 5MB')
+            return
+        }
+
+        setError(null)
+        setImageFile(file)
+        setImagePreview(URL.createObjectURL(file))
+    }
+
+    function clearImage() {
+        setImageFile(null)
+        setImagePreview(null)
+        if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+
+    async function uploadImage(): Promise<string | null> {
+        if (!imageFile) return null
+
+        const ext = imageFile.name.split('.').pop()
+        const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+        const { error: uploadError } = await supabase.storage
+            .from('analysis-images')
+            .upload(fileName, imageFile)
+
+        if (uploadError) {
+            throw new Error(`Image upload failed: ${uploadError.message}`)
+        }
+
+        const { data } = supabase.storage.from('analysis-images').getPublicUrl(fileName)
+        return data.publicUrl
+    }
+
     async function handlePost() {
         if (!title || !content) return
         setLoading(true)
-        const { error } = await supabase.from('analyses').insert({
-            title,
-            content,
-            counter_id: counterId ? parseInt(counterId) : null,
-            price_at_post: price ? parseFloat(price) : null,
-            pe_at_post: pe ? parseFloat(pe) : null,
-            market_cap_at_post: marketCap ? parseFloat(marketCap) : null,
-            published: true
-        })
-        if (!error) {
+        setError(null)
+
+        try {
+            const imageUrl = await uploadImage()
+
+            const { error: insertError } = await supabase.from('analyses').insert({
+                title,
+                content,
+                counter_id: counterId ? parseInt(counterId) : null,
+                price_at_post: price ? parseFloat(price) : null,
+                pe_at_post: pe ? parseFloat(pe) : null,
+                market_cap_at_post: marketCap ? parseFloat(marketCap) : null,
+                image_url: imageUrl,
+                published: true,
+            })
+
+            if (insertError) throw new Error(insertError.message)
+
             setSuccess(true)
             setTitle('')
             setContent('')
@@ -40,9 +94,13 @@ export default function AdminPage() {
             setPrice('')
             setPe('')
             setMarketCap('')
+            clearImage()
             setTimeout(() => setSuccess(false), 3000)
+        } catch (err: any) {
+            setError(err.message ?? 'Something went wrong')
+        } finally {
+            setLoading(false)
         }
-        setLoading(false)
     }
 
     return (
@@ -61,6 +119,12 @@ export default function AdminPage() {
                     </div>
                 )}
 
+                {error && (
+                    <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        {error}
+                    </div>
+                )}
+
                 <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
                     <div>
                         <label className="text-sm text-gray-600 block mb-1">Title</label>
@@ -70,6 +134,43 @@ export default function AdminPage() {
                             className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-amber-400"
                             placeholder="e.g. NBM looking strong this week"
                         />
+                    </div>
+
+                    <div>
+                        <label className="text-sm text-gray-600 block mb-1">Image (optional)</label>
+                        {imagePreview ? (
+                            <div className="relative">
+                                <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="w-full h-40 object-cover rounded-lg border border-gray-200"
+                                />
+                                <button
+                                    onClick={clearImage}
+                                    type="button"
+                                    className="absolute top-2 right-2 bg-white border border-gray-200 rounded-full w-7 h-7 text-sm text-gray-600 hover:bg-gray-50"
+                                    aria-label="Remove image"
+                                >
+                                    ×
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full border border-dashed border-gray-300 rounded-lg px-3 py-6 text-sm text-gray-500 hover:border-amber-400 hover:text-amber-600 transition-colors"
+                            >
+                                Click to upload an image
+                            </button>
+                        )}
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                        />
+                        <p className="text-xs text-gray-400 mt-1">JPG or PNG, up to 5MB</p>
                     </div>
 
                     <div>
@@ -135,7 +236,7 @@ export default function AdminPage() {
                         disabled={loading || !title || !content}
                         className="w-full bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium py-2 rounded-lg transition-colors disabled:opacity-50"
                     >
-                        {loading ? 'Posting...' : 'Publish analysis'}
+                        {loading ? (imageFile ? 'Uploading image…' : 'Posting...') : 'Publish analysis'}
                     </button>
                 </div>
             </div>

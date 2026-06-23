@@ -13,83 +13,107 @@ SUPABASE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+PRICE_RE = re.compile(r"\d[\d,]*\.\d{2}")
+SIGNED_RE = re.compile(r"[+-]\d+\.\d{2}")
+
+
 def scrape_mse():
     url = "https://afx.kwayisi.org/mse/"
     headers = {"User-Agent": "Mozilla/5.0"}
 
     try:
         res = requests.get(url, headers=headers, timeout=10)
-        soup = BeautifulSoup(res.text, "html.parser")
+        soup = BeautifulSoup(res.text, "lxml")
     except Exception as e:
         print(f"Failed to fetch page: {e}")
         return
 
     today = date.today().isoformat()
     updated = 0
+    seen = set()
 
-    # Find all links that look like individual stock pages
-    links = soup.find_all("a", href=re.compile(r"/mse/\w+"))
+    links = soup.find_all("a", href=re.compile(r"/mse/[a-z0-9\-]+\.html"))
 
     for link in links:
+        symbol = link.get_text(strip=True).upper()
+
+        if " " in symbol or len(symbol) > 10:
+            continue
+        if any(x in symbol for x in ["MASI", "MDSI", "MFSI", "INDEX"]):
+            continue
+        if symbol in seen:
+            continue
+
         row = link.find_parent("tr")
         if not row:
             continue
-        
-        cols = row.find_all("td")
-        if len(cols) < 3:
+
+        row_text = row.get_text(" ", strip=True)
+
+        prices = PRICE_RE.findall(row_text)
+        if not prices:
+            print(f"Skipping {symbol} — no price pattern in row: {row_text}")
             continue
-        
-        symbol = link.get_text(strip=True).upper()
-        
-        # Skip index rows
-        if any(x in symbol for x in ["MASI", "MDSI", "MFSI", "INDEX"]):
-            continue
-        
+
         try:
-            price = float(cols[1].get_text(strip=True).replace(",", ""))
-            change_text = cols[2].get_text(strip=True).replace("%", "").replace("+", "").strip()
-            change_pct = float(change_text)
-        except:
-            print(f"Skipping {symbol} — could not parse")
+            price = float(prices[0].replace(",", ""))
+        except Exception:
+            print(f"Skipping {symbol} — could not parse price")
             continue
-        
-        counter = supabase.table("mse_counters")\
-            .select("id")\
-            .eq("symbol", symbol)\
-            .execute()
-        
+
+        price_pos = row_text.find(prices[0])
+        after_price = row_text[price_pos + len(prices[0]):]
+        signed_match = SIGNED_RE.search(after_price)
+
+        change_pct = None
+        if signed_match:
+            raw_change = float(signed_match.group())
+            next_char = after_price[signed_match.end():signed_match.end() + 1]
+            if next_char == "%":
+                change_pct = raw_change
+            else:
+                prev_price = price - raw_change
+                if prev_price:
+                    change_pct = round((raw_change / prev_price) * 100, 2)
+        # If nothing signed is found at all, the counter likely didn't
+        # trade today — change_pct correctly stays None.
+
+        seen.add(symbol)
+
+        counter = supabase.table("mse_counters").select("id").eq("symbol", symbol).execute()
         if not counter.data:
             print(f"Not in DB: {symbol}")
             continue
-        
+
         counter_id = counter.data[0]["id"]
 
-        existing = supabase.table("mse_prices")\
-            .select("id")\
-            .eq("counter_id", counter_id)\
-            .eq("price_date", today)\
+        existing = (
+            supabase.table("mse_prices")
+            .select("id")
+            .eq("counter_id", counter_id)
+            .eq("price_date", today)
             .execute()
+        )
 
         if existing.data:
-            supabase.table("mse_prices")\
-                .update({"price": price, "change_pct": change_pct})\
-                .eq("id", existing.data[0]["id"])\
+            supabase.table("mse_prices") \
+                .update({"price": price, "change_pct": change_pct}) \
+                .eq("id", existing.data[0]["id"]) \
                 .execute()
             print(f"Updated {symbol}: MK {price} ({change_pct}%)")
         else:
-            supabase.table("mse_prices")\
-                .insert({
-                    "counter_id": counter_id,
-                    "price": price,
-                    "change_pct": change_pct,
-                    "price_date": today
-                })\
-                .execute()
+            supabase.table("mse_prices").insert({
+                "counter_id": counter_id,
+                "price": price,
+                "change_pct": change_pct,
+                "price_date": today,
+            }).execute()
             print(f"Inserted {symbol}: MK {price} ({change_pct}%)")
 
         updated += 1
 
     print(f"\nDone. {updated} counters updated for {today}")
+
 
 if __name__ == "__main__":
     scrape_mse()
