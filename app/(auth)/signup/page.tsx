@@ -59,7 +59,7 @@ export default function SignupPage() {
             <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
                 <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8 text-center">
                     <h1 className="text-xl font-medium text-gray-900">
-                        <span className="text-amber-600">BBN</span> Investment Academy
+                        <span className="text-amber-600">Malawi</span> Investor
                     </h1>
                     <p className="text-sm text-gray-600 mt-4">
                         Check <span className="font-medium">{email}</span> for a confirmation link to activate your account.
@@ -73,7 +73,7 @@ export default function SignupPage() {
             <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8">
                 <div className="mb-6">
                     <h1 className="text-xl font-medium text-gray-900">
-                        <span className="text-amber-600">BBN</span> Investment Academy
+                        <span className="text-amber-600">Malawi</span> Investor
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Create your free account</p>
                 </div>

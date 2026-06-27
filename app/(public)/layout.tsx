@@ -43,7 +43,7 @@ export default async function PublicLayout({
                         <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-6 py-2.5">
                             <div className="flex items-center gap-6">
                                 <Link href="/" className="text-[18px] font-medium text-(--color-text-primary) no-underline">
-                                    <span className="text-(--color-text-warning)">BBN</span> Investment Academy
+                                    <span className="text-(--color-text-warning)">Malawi</span> Investor
                                 </Link>
                                 <nav className="hidden items-center gap-6 text-[16px] text-(--color-text-secondary) md:flex">
                                     {navLinks.map(({ label, href }) => (

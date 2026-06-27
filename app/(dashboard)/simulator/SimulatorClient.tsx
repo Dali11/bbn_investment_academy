@@ -11,7 +11,7 @@ export default function SimulatorClient({
     transactions,
     userId,
 }: any) {
-    const [tab, setTab] = useState<'portfolio' | 'invest' | 'history'>('portfolio')
+    const [tab, setTab] = useState<'portfolio' | 'trade' | 'history'>('portfolio')
     const [selectedCounter, setSelectedCounter] = useState('')
     const [shares, setShares] = useState('')
     const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy')

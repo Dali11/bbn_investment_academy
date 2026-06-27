@@ -282,7 +282,7 @@ export default function AdminPage() {
                 >
                     <div className="flex items-center gap-2.5">
                         <span className="text-[13px] font-bold text-gray-900">
-                            <span className="text-amber-700">BBN</span> Admin
+                            <span className="text-amber-700">Malawi</span> Admin
                         </span>
                         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">
                             {success ? 'Published' : 'Draft'}

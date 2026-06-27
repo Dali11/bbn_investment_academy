@@ -14,7 +14,7 @@ export default function SidebarClient({ profile }: any) {
         <aside className="w-56 bg-white border-r border-gray-200 flex flex-col fixed h-full">
             <div className="px-5 py-4 border-b border-gray-200">
                 <p className="text-base font-medium text-gray-900">
-                    <span className="text-amber-600">BBN</span> Academy
+                    <span className="text-amber-600">Malawi</span> Investor
                 </p>
                 <p className="text-xs text-gray-400 mt-0.5 capitalize">
                     {profile?.membership_tier || 'free'} member

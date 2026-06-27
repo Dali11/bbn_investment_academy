@@ -31,7 +31,7 @@ export default function LoginPage() {
             <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8">
                 <div className="mb-6">
                     <h1 className="text-xl font-medium text-gray-900">
-                        <span className="text-amber-600">BBN</span> Investment Academy
+                        <span className="text-amber-600">Malawi</span> Investor
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">Sign in to your account</p>
                 </div>

@@ -30,7 +30,7 @@ export default async function LearnPage() {
         <div className="flex justify-between items-start mb-8">
           <div>
             <p className="text-xs uppercase tracking-wide text-amber-600 font-medium mb-1">
-              BBN Investment Academy
+              Malawi Investor
             </p>
             <h1 className="text-2xl font-medium text-gray-900">Learn the MSE</h1>
           </div>
