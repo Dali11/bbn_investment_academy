@@ -55,11 +55,25 @@ export default async function PublicLayout({
                                 </nav>
                             </div>
 
+                           
                             <div className="flex items-center gap-2">
+                                {!user && (
+                                    <Link
+                                        href="/login"
+                                        className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-3 py-1.5 text-xs font-medium text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)"
+                                    >
+                                        Sign in
+                                    </Link>
+                                )}
+                                {user && (
+                                    <Link
+                                        href="/signup"
+                                        className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-1.5 text-xs font-medium text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)"
+                                    >
+                                        My account
+                                    </Link>
+                                )}
                                 <MobileNav navLinks={navLinks} user={!!user} />
-                            </div>
-                            
-                            <div className="flex items-center gap-2">
                                 <div className="relative hidden sm:block">
                                     <Search
                                         className="absolute top-1/2 left-2.5 -translate-y-1/2 text-(--color-text-tertiary)"
@@ -72,29 +86,6 @@ export default async function PublicLayout({
                                         className="h-8 w-[200px] rounded-(--border-radius-md) pl-8 text-xs"
                                     />
                                 </div>
-                                {user ? (
-                                    <Link
-                                        href="/signup"
-                                        className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-1.5 text-xs font-medium text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)"
-                                    >
-                                        My account
-                                    </Link>
-                                ) : (
-                                    <>
-                                        <Link
-                                            href="/login"
-                                            className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-3 py-1.5 text-xs font-medium text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)"
-                                        >
-                                            Sign in
-                                        </Link>
-                                        <Link
-                                            href="/signup"
-                                            className="rounded-(--border-radius-md) bg-[#ef9f27] px-3 py-1.5 text-xs font-medium text-[#412402] no-underline transition-opacity hover:opacity-90"
-                                        >
-                                            Join free
-                                        </Link>
-                                    </>
-                                )}
                             </div>
                         </div>
 

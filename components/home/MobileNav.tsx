@@ -72,34 +72,17 @@ export default function MobileNav({
                             ))}
                         </nav>
 
-                        <div className="mt-auto px-3 py-4 border-t-[0.5px] border-(--color-border-tertiary) flex flex-col gap-2">
-                            {user ? (
+                        {!user && (
+                            <div className="mt-auto px-3 py-4 border-t-[0.5px] border-(--color-border-tertiary)">
                                 <Link
                                     href="/signup"
                                     onClick={() => setOpen(false)}
-                                    className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-2 text-center text-sm font-medium text-(--color-text-primary) no-underline"
+                                    className="block rounded-(--border-radius-md) bg-[#ef9f27] px-4 py-2 text-center text-sm font-medium text-[#412402] no-underline"
                                 >
-                                    My account
+                                    Join free
                                 </Link>
-                            ) : (
-                                <>
-                                    <Link
-                                        href="/login"
-                                        onClick={() => setOpen(false)}
-                                        className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-2 text-center text-sm font-medium text-(--color-text-primary) no-underline"
-                                    >
-                                        Sign in
-                                    </Link>
-                                    <Link
-                                        href="/signup"
-                                        onClick={() => setOpen(false)}
-                                        className="rounded-(--border-radius-md) bg-[#ef9f27] px-4 py-2 text-center text-sm font-medium text-[#412402] no-underline"
-                                    >
-                                        Join free
-                                    </Link>
-                                </>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
