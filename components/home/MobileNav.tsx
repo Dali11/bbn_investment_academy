@@ -1,0 +1,108 @@
+'use client'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Menu, X, Search } from 'lucide-react'
+
+type NavLink = { label: string; href: string }
+
+export default function MobileNav({
+    navLinks,
+    user,
+}: {
+    navLinks: NavLink[]
+    user: boolean
+}) {
+    const [open, setOpen] = useState(false)
+
+    return (
+        <>
+            <button
+                onClick={() => setOpen(true)}
+                className="md:hidden flex items-center justify-center p-1.5 text-(--color-text-primary)"
+                aria-label="Open menu"
+            >
+                <Menu size={22} />
+            </button>
+
+            {open && (
+                <div className="fixed inset-0 z-[100] md:hidden">
+                    <div
+                        className="absolute inset-0 bg-black/40"
+                        onClick={() => setOpen(false)}
+                    />
+                    <div className="absolute top-0 right-0 h-full w-[78%] max-w-[300px] bg-(--color-background-primary) shadow-xl flex flex-col">
+                        <div className="flex items-center justify-between px-5 py-4 border-b-[0.5px] border-(--color-border-tertiary)">
+                            <span className="text-[16px] font-medium text-(--color-text-primary)">
+                                <span className="text-(--color-text-warning)">Malawi</span> Investor
+                            </span>
+                            <button
+                                onClick={() => setOpen(false)}
+                                aria-label="Close menu"
+                                className="p-1.5 text-(--color-text-secondary)"
+                            >
+                                <X size={20} />
+                            </button>
+                        </div>
+
+                        <div className="px-3 pt-4">
+                            <div className="relative">
+                                <Search
+                                    className="absolute top-1/2 left-2.5 -translate-y-1/2 text-(--color-text-tertiary)"
+                                    size={14}
+                                    aria-hidden="true"
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Symbols, courses, glossary…"
+                                    className="h-9 w-full rounded-(--border-radius-md) pl-8 text-sm border-[0.5px] border-(--color-border-secondary)"
+                                />
+                            </div>
+                        </div>
+
+                        <nav className="flex flex-col gap-1 px-3 py-4">
+                            {navLinks.map(({ label, href }) => (
+                                <Link
+                                    key={href}
+                                    href={href}
+                                    onClick={() => setOpen(false)}
+                                    className="rounded-(--border-radius-md) px-3 py-2.5 text-[15px] text-(--color-text-primary) no-underline hover:bg-(--color-background-secondary)"
+                                >
+                                    {label}
+                                </Link>
+                            ))}
+                        </nav>
+
+                        <div className="mt-auto px-3 py-4 border-t-[0.5px] border-(--color-border-tertiary) flex flex-col gap-2">
+                            {user ? (
+                                <Link
+                                    href="/signup"
+                                    onClick={() => setOpen(false)}
+                                    className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-2 text-center text-sm font-medium text-(--color-text-primary) no-underline"
+                                >
+                                    My account
+                                </Link>
+                            ) : (
+                                <>
+                                    <Link
+                                        href="/login"
+                                        onClick={() => setOpen(false)}
+                                        className="rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) px-4 py-2 text-center text-sm font-medium text-(--color-text-primary) no-underline"
+                                    >
+                                        Sign in
+                                    </Link>
+                                    <Link
+                                        href="/signup"
+                                        onClick={() => setOpen(false)}
+                                        className="rounded-(--border-radius-md) bg-[#ef9f27] px-4 py-2 text-center text-sm font-medium text-[#412402] no-underline"
+                                    >
+                                        Join free
+                                    </Link>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+        </>
+    )
+}

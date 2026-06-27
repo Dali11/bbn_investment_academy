@@ -3,6 +3,7 @@ import '../globals.css'
 import Link from 'next/link'
 import { Search, ChevronUp, ChevronDown } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import MobileNav from '@/components/home/MobileNav'
 
 export default async function PublicLayout({
     children,
@@ -54,6 +55,10 @@ export default async function PublicLayout({
                                 </nav>
                             </div>
 
+                            <div className="flex items-center gap-2">
+                                <MobileNav navLinks={navLinks} user={!!user} />
+                            </div>
+                            
                             <div className="flex items-center gap-2">
                                 <div className="relative hidden sm:block">
                                     <Search
