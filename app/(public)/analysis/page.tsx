@@ -26,16 +26,29 @@ function getTopMovers(prices: PriceMover[]) {
     return { gainers, losers }
 }
 
-export default async function AnalysisPage() {
+export default async function AnalysisPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ symbol?: string; sector?: string }>
+}) {
     const supabase = await createClient()
+    const { symbol, sector } = await searchParams
+
+    // Build the analyses query with optional symbol filter
+    let query = supabase
+        .from('analyses')
+        .select('id, title, content, created_at, image_url, mse_counters(symbol, sector)')
+        .eq('published', true)
+        .order('created_at', { ascending: false })
+        .limit(20)
+
+    if (symbol) {
+        // filter by counter symbol via join
+        query = query.eq('mse_counters.symbol', symbol)
+    }
 
     const [{ data: analyses }, { data: prices }] = await Promise.all([
-        supabase
-            .from('analyses')
-            .select('id, title, content, created_at, image_url, mse_counters(symbol)')
-            .eq('published', true)
-            .order('created_at', { ascending: false })
-            .limit(20),
+        query,
         supabase
             .from('mse_prices')
             .select('price, change_pct, mse_counters(symbol)')
@@ -43,8 +56,13 @@ export default async function AnalysisPage() {
             .limit(48),
     ])
 
-    const featured = analyses?.[0]
-    const rest = analyses?.slice(1) ?? []
+    // client-side sector filter (if your mse_counters has a sector column)
+    const filtered = sector && sector !== 'All'
+        ? (analyses ?? []).filter((a: any) => a.mse_counters?.sector === sector)
+        : (analyses ?? [])
+
+    const featured = filtered[0]
+    const rest = filtered.slice(1)
     const { gainers, losers } = getTopMovers(prices ?? [])
 
     return (
@@ -60,9 +78,16 @@ export default async function AnalysisPage() {
                 {/* Sector filter pills */}
                 <div className="mb-6 flex flex-wrap gap-2">
                     {['All', 'Banking', 'Insurance', 'Telecoms', 'Agriculture', 'Energy'].map((f) => (
-                        <span key={f} className={`cursor-pointer rounded-full border-[0.5px] px-3 py-1 text-[12px] font-medium transition-colors ${f === 'All' ? 'border-transparent bg-(--color-text-primary) text-(--color-background-primary)' : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-secondary) hover:border-(--color-border-secondary)'}`}>
+                        <Link
+                            key={f}
+                            href={f === 'All' ? '/analysis' : `/analysis?sector=${f}`}
+                            className={`rounded-full border-[0.5px] px-3 py-1 text-[12px] font-medium transition-colors no-underline ${(f === 'All' && !sector) || sector === f
+                                    ? 'border-transparent bg-(--color-text-primary) text-(--color-background-primary)'
+                                    : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-secondary) hover:border-(--color-border-secondary)'
+                                }`}
+                        >
                             {f}
-                        </span>
+                        </Link>
                     ))}
                 </div>
 
@@ -96,7 +121,15 @@ export default async function AnalysisPage() {
                                     {featured.title}
                                 </h2>
                                 <p className="mb-4 text-[13px] leading-[1.7] text-(--color-text-secondary)">
-                                    {featured.content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 200)}…
+                                    {featured.content
+                                        .replace(/<[^>]*>/g, ' ')
+                                        .replace(/&nbsp;/g, ' ')
+                                        .replace(/&amp;/g, '&')
+                                        .replace(/&lt;/g, '<')
+                                        .replace(/&gt;/g, '>')
+                                        .replace(/\s+/g, ' ')
+                                        .trim()
+                                        .slice(0, 200)}…
                                 </p>
                                 <div className="flex items-center gap-2 text-[12px] text-(--color-text-tertiary)">
                                     <div className="flex h-5 w-5 items-center justify-center rounded-full bg-(--color-background-warning) text-[9px] font-bold text-(--color-text-warning)">BN</div>

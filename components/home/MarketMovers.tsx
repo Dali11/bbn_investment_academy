@@ -1,7 +1,6 @@
 import Link from 'next/link'
 import { TrendingUp, TrendingDown } from 'lucide-react'
 import { getSymbol, type PriceMover } from '@/types/home'
-import { TrendChart } from './TrendChart'
 
 function MoverSection({
     title,
@@ -10,9 +9,6 @@ function MoverSection({
     positive,
     emptyLabel,
     showDivider,
-
-    analysis,
-    related = [],
 }: {
     title: string
     Icon: typeof TrendingUp
@@ -20,12 +16,9 @@ function MoverSection({
     positive: boolean
     emptyLabel: string
     showDivider: boolean
-    analysis: any
-    related: any[]
 }) {
     const textVar = positive ? 'var(--color-text-success)' : 'var(--color-text-danger)'
     const bgVar = positive ? 'var(--color-background-success)' : 'var(--color-background-danger)'
-    const symbol = getSymbol(analysis?.mse_counters)
 
     return (
         <div className={showDivider ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}>
@@ -55,8 +48,6 @@ function MoverSection({
                     )
                 })
             )}
-
-              <TrendChart symbol={symbol} />
         </div>
     )
 }

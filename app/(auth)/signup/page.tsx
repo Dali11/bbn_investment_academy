@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function SignupPage() {
@@ -11,7 +11,9 @@ export default function SignupPage() {
     const [confirmPassword, setConfirmPassword] = useState('')
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
+    const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
     const supabase = createClient()
 
     async function handleSignup() {
@@ -29,19 +31,43 @@ export default function SignupPage() {
             return
         }
         setLoading(true)
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
             email,
             password,
-            options: { data: { full_name: fullName } }
+            options: {
+                data: { full_name: fullName },
+                emailRedirectTo: `${window.location.origin}/auth/callback${searchParams.get('redirect')
+                        ? `?redirect=${searchParams.get('redirect')}`
+                        : ''
+                    }`,
+            }
         })
         if (error) {
             setError(error.message)
             setLoading(false)
+        } else if (data.session) {
+            const redirectTo = searchParams.get('redirect') || '/analysis'
+            router.push(redirectTo)
         } else {
-            router.push('/analysis')
+            setLoading(false)
+            setAwaitingConfirmation(true)
         }
     }
 
+    if (awaitingConfirmation) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8 text-center">
+                    <h1 className="text-xl font-medium text-gray-900">
+                        <span className="text-amber-600">BBN</span> Investment Academy
+                    </h1>
+                    <p className="text-sm text-gray-600 mt-4">
+                        Check <span className="font-medium">{email}</span> for a confirmation link to activate your account.
+                    </p>
+                </div>
+            </div>
+        )
+    }
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
             <div className="w-full max-w-sm bg-white border border-gray-200 rounded-xl p-8">
@@ -111,7 +137,10 @@ export default function SignupPage() {
 
                 <p className="text-sm text-gray-500 text-center mt-4">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-amber-600 hover:underline">
+                    <Link
+                        href={`/login${searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}` : ''}`}
+                        className="text-amber-600 hover:underline"
+                    >
                         Sign in
                     </Link>
                 </p>

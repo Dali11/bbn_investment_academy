@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { Flame } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { getSymbol, type Analysis } from '@/types/home'
-import { TrendChart } from './TrendChart'
+
 
 export function FeaturedAnalysis({
     analysis,
@@ -39,7 +39,13 @@ export function FeaturedAnalysis({
             </Link>
 
             <p className="text-base leading-relaxed text-(--color-text-secondary)">
-                {analysis.content.slice(0, 180)}…
+                {analysis.content
+                    .replace(/<[^>]*>/g, ' ')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&amp;/g, '&')
+                    .replace(/\s+/g, ' ')
+                    .trim()
+                    .slice(0, 350)}…
             </p>
 
             <div className="flex flex-wrap items-center gap-2 text-sm text-(--color-text-tertiary)">
@@ -56,7 +62,6 @@ export function FeaturedAnalysis({
                 )}
             </div>
 
-            <TrendChart symbol={symbol} />
 
             {related.length > 0 && (
                 <div className="pt-1">

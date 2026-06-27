@@ -72,7 +72,7 @@ export default async function HomePage() {
         <MarketMovers gainers={gainers} losers={losers} />
         <CommunityPulse threads={threads ?? []} />
       </div>
-      <GlossaryPreview items={glossary ?? []} />
+      {/* <GlossaryPreview items={glossary ?? []} /> */}
       <CoursePreviews courses={courses ?? []} />
       <JoinCta />
     </div>

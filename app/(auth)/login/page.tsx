@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
@@ -10,6 +10,7 @@ export default function LoginPage() {
     const [error, setError] = useState('')
     const [loading, setLoading] = useState(false)
     const router = useRouter()
+    const searchParams = useSearchParams()
     const supabase = createClient()
 
     async function handleLogin() {
@@ -20,7 +21,8 @@ export default function LoginPage() {
             setError(error.message)
             setLoading(false)
         } else {
-            router.push('/analysis')
+            const redirectTo = searchParams.get('redirect') || '/analysis'
+            router.push(redirectTo)
         }
     }
 
@@ -73,7 +75,10 @@ export default function LoginPage() {
 
                 <p className="text-sm text-gray-500 text-center mt-4">
                     No account?{' '}
-                    <Link href="/signup" className="text-amber-600 hover:underline">
+                    <Link
+                        href={`/signup${searchParams.get('redirect') ? `?redirect=${searchParams.get('redirect')}` : ''}`}
+                        className="text-amber-600 hover:underline"
+                    >
                         Create one
                     </Link>
                 </p>
