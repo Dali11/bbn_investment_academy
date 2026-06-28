@@ -67,9 +67,12 @@ export default async function PublicLayout({
                                         Sign in
                                     </Link>
                                 )}
-                                {user && <AccountButton name={user.user_metadata?.full_name ?? user.email ?? ''} />}
+                                <div>
+                                    {user && <AccountButton name={user.user_metadata?.full_name ?? user.email ?? ''} />}
+                                </div>
                                 <MobileNav navLinks={navLinks} user={!!user} />
                                 <SearchBox />
+                                
                             </div>
                         </div>
 

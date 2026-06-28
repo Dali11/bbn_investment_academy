@@ -25,7 +25,7 @@ function LoginForm() {
                 : error.message)
             setLoading(false)
         } else {
-            router.push(searchParams.get('redirect') || '/analysis')
+            router.push(searchParams.get('redirect') || '/')
             router.refresh()
         }
     }

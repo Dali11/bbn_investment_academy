@@ -46,7 +46,7 @@ function SignupForm() {
             setError(error.message || 'Something went wrong. Please try again.')
             setLoading(false)
         } else if (data.session) {
-            const redirectTo = searchParams.get('redirect') || '/analysis'
+            const redirectTo = searchParams.get('redirect') || '/'
             router.push(redirectTo)
         } else {
             setLoading(false)
