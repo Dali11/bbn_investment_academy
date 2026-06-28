@@ -1,9 +1,78 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from 'date-fns'
 import { notFound } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 
+// ── Shared helper ──────────────────────────────────────────────
+function stripHtml(html: string, maxLength = 160): string {
+    return html
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, maxLength)
+}
+
+// ── Dynamic metadata — powers WhatsApp/Twitter/Google previews ──
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ id: string }>
+}): Promise<Metadata> {
+    const { id } = await params
+    const supabase = await createClient()
+
+    const { data: article } = await supabase
+        .from('analyses')
+        .select('title, content, image_url, mse_counters(symbol)')
+        .eq('id', id)
+        .eq('published', true)
+        .single()
+
+    if (!article) {
+        return { title: 'Article not found' }
+    }
+
+    const symbol = (article as any).mse_counters?.symbol
+    const description = stripHtml(article.content, 160)
+    const title = symbol
+        ? `${article.title} — ${symbol}`
+        : article.title
+
+    return {
+        title,
+        description,
+
+        openGraph: {
+            type: 'article',
+            title,
+            description,
+            // Use article cover image if available, else fall back to default OG image
+            images: article.image_url
+                ? [{ url: article.image_url, width: 1200, height: 630, alt: article.title }]
+                : [{ url: '/og-default.png', width: 1200, height: 630, alt: 'Malawi Investor' }],
+        },
+
+        twitter: {
+            card: 'summary_large_image',
+            title,
+            description,
+            images: article.image_url ? [article.image_url] : ['/og-default.png'],
+        },
+
+        alternates: {
+            canonical: `/analysis/${id}`,
+        },
+    }
+}
+
+// ── Page component (unchanged below) ──────────────────────────
 export default async function AnalysisArticlePage({
     params,
 }: {
@@ -24,7 +93,6 @@ export default async function AnalysisArticlePage({
     const symbol = (article as any).mse_counters?.symbol
     const company = (article as any).mse_counters?.company_name
 
-    // Related articles — same counter, exclude current
     const { data: related } = symbol ? await supabase
         .from('analyses')
         .select('id, title, created_at, image_url, mse_counters(symbol)')
@@ -80,7 +148,7 @@ export default async function AnalysisArticlePage({
                 {/* Hero image */}
                 <div className="mb-6 overflow-hidden rounded-(--border-radius-lg) h-[240px] w-full">
                     {(article as any).image_url ? (
-                        <img src={(article as any).image_url} alt="" className="h-full w-full object-cover" />
+                        <img src={(article as any).image_url} alt={article.title} className="h-full w-full object-cover" />
                     ) : (
                         <div className="flex h-full w-full items-center justify-center bg-[#0c1f3d]">
                             <svg viewBox="0 0 200 80" className="w-48 opacity-20" fill="none">
@@ -163,7 +231,6 @@ export default async function AnalysisArticlePage({
 
             {/* Sidebar */}
             <div className="hidden lg:block">
-                {/* Live price card */}
                 {symbol && (
                     <div className="mb-4 rounded-(--border-radius-lg) border-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary) shadow-[var(--shadow-card)] p-4">
                         <p className="mb-3 text-[11px] font-bold tracking-widest text-(--color-text-tertiary) uppercase">{symbol} price</p>
@@ -192,7 +259,6 @@ export default async function AnalysisArticlePage({
                     </div>
                 )}
 
-                {/* Join CTA */}
                 <div className="rounded-(--border-radius-lg) border-[0.5px] border-[rgba(239,159,39,0.25)] bg-(--color-background-warning) p-4">
                     <p className="mb-1 text-[13px] font-bold text-(--color-text-warning)">
                         Track {symbol ?? 'this stock'} in your portfolio
