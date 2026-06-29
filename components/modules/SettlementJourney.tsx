@@ -28,7 +28,7 @@ export default function SettlementJourney() {
                     <button
                         key={i}
                         onClick={() => setActive(i)}
-                        className="flex items-center gap-3 text-left"
+                        className="flex items-center gap-3 text-left p-2.5 bg-white"
                     >
                         <div
                             className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium flex-shrink-0 ${active === i ? 'bg-amber-600 text-white' : 'bg-green-100 text-green-700'
@@ -40,6 +40,7 @@ export default function SettlementJourney() {
                             {s.title}
                         </p>
                     </button>
+                    
                 ))}
             </div>
 
