@@ -68,8 +68,7 @@ export default async function AnalysisPage({
     const { gainers, losers } = getTopMovers(prices ?? [])
 
 
-    await new Promise(resolve => setTimeout(resolve, 5000))
-
+   
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
 
