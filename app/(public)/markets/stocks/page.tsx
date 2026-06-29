@@ -1,12 +1,121 @@
-import { TrendingUp } from 'lucide-react'
-import ComingSoon from '@/components/home/ComingSoon'
+// app/(public)/markets/stocks/page.tsx
+// All MSE-listed counters in a sortable table.
+// Columns: Symbol, Company, Sector, Price, Change%, P/E, Market Cap, 52-wk Range
+// 52-week high/low computed from mse_prices history (server-side).
+// Sorting is client-side via StocksTable component.
 
-export default function StocksPage() {
+import { createClient as createServiceClient } from '@supabase/supabase-js'
+import { StocksTable } from './StocksTable'
+
+
+export const revalidate = 3600 // re-fetch at most once per hour
+
+function getServiceClient() {
+    return createServiceClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    )
+}
+
+export default async function StocksPage() {
+    const supabase = getServiceClient()
+
+    // 1. Latest price per counter
+    const { data: rawPrices } = await supabase
+        .from('mse_prices')
+        .select('price, change_pct, market_cap, pe_ratio, price_date, counter_id, mse_counters(id, symbol, company_name, sector)')
+        .order('price_date', { ascending: false })
+        .limit(128)
+
+    // Deduplicate: keep only the most recent row per counter_id
+    const seenId = new Set<number>()
+    const latest = (rawPrices ?? []).filter((p: any) => {
+        if (seenId.has(p.counter_id)) return false
+        seenId.add(p.counter_id)
+        return true
+    })
+
+    // 2. 52-week high/low from history
+    const oneYearAgo = new Date()
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+    const since = oneYearAgo.toISOString().slice(0, 10)
+
+    const { data: history } = await supabase
+        .from('mse_prices')
+        .select('counter_id, price')
+        .gte('price_date', since)
+
+    // Build a map: counter_id → { high, low }
+    const rangeMap = new Map<number, { high: number; low: number }>()
+    for (const row of history ?? []) {
+        const price = Number(row.price)
+        const existing = rangeMap.get(row.counter_id)
+        if (!existing) {
+            rangeMap.set(row.counter_id, { high: price, low: price })
+        } else {
+            if (price > existing.high) existing.high = price
+            if (price < existing.low) existing.low = price
+        }
+    }
+
+    // 3. Shape data for the client component
+    const stocks = latest
+        .filter((p: any) => p.mse_counters?.symbol)
+        .map((p: any) => {
+            const range = rangeMap.get(p.counter_id)
+            return {
+                symbol: p.mse_counters.symbol as string,
+                company_name: p.mse_counters.company_name as string,
+                sector: (p.mse_counters.sector ?? '—') as string,
+                price: Number(p.price),
+                change_pct: p.change_pct != null ? Number(p.change_pct) : null,
+                pe_ratio: p.pe_ratio != null ? Number(p.pe_ratio) : null,
+                market_cap: p.market_cap != null ? Number(p.market_cap) : null,
+                week52_high: range?.high ?? null,
+                week52_low: range?.low ?? null,
+                price_date: p.price_date as string,
+            }
+        })
+        .sort((a, b) => a.symbol.localeCompare(b.symbol))
+
+    const lastUpdated = latest[0]?.price_date
+        ? new Date(latest[0].price_date).toLocaleDateString('en-MW', {
+            day: 'numeric', month: 'long', year: 'numeric',
+        })
+        : null
+
+    const gainers = stocks.filter(s => (s.change_pct ?? 0) > 0).length
+    const losers = stocks.filter(s => (s.change_pct ?? 0) < 0).length
+
     return (
-        <ComingSoon
-            icon={TrendingUp}
-            title="Stocks"
-            description="Browse every company listed on the MSE with live prices, charts and fundamentals. We're building this out next."
-        />
+        <div className="space-y-4">
+            {/* Header */}
+            <div>
+                <h1 className="text-[20px] font-semibold text-(--color-text-primary)">Stocks</h1>
+                <p className="mt-0.5 text-[13px] text-(--color-text-tertiary)">
+                    All {stocks.length} counters listed on the Malawi Stock Exchange
+                    {lastUpdated && <> · Prices as of {lastUpdated}</>}
+                </p>
+            </div>
+
+            {/* Breadth pills */}
+            <div className="flex flex-wrap gap-2">
+                <span className="rounded-full px-3 py-1 text-[12px] font-medium"
+                    style={{ background: 'var(--color-background-success)', color: 'var(--color-text-success)' }}>
+                    ▲ {gainers} advancing
+                </span>
+                <span className="rounded-full px-3 py-1 text-[12px] font-medium"
+                    style={{ background: 'var(--color-background-danger)', color: 'var(--color-text-danger)' }}>
+                    ▼ {losers} declining
+                </span>
+                <span className="rounded-full px-3 py-1 text-[12px] font-medium"
+                    style={{ background: 'var(--color-background-secondary)', color: 'var(--color-text-secondary)' }}>
+                    — {stocks.length - gainers - losers} unchanged
+                </span>
+            </div>
+
+            {/* Sortable table */}
+            <StocksTable stocks={stocks} />
+        </div>
     )
 }
