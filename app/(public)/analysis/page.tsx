@@ -67,7 +67,6 @@ export default async function AnalysisPage({
     const rest = filtered.slice(1)
     const { gainers, losers } = getTopMovers(prices ?? [])
 
-
    
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">

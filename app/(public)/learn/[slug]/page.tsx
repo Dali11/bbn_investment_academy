@@ -2,9 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { revalidatePath } from 'next/cache'
-import ReactMarkdown from 'react-markdown'
 import ModuleCompletion from '@/components/modules/ModuleCompletion'
 import { ModuleWidget } from '@/components/modules/ModuleWidget'
+import ModuleTabs from '@/components/modules/ModuleTabs'
+import OrderSimulator from '@/components/modules/OrderSimulator'
+import SettlementJourney from '@/components/modules/SettlementJourney'
+import ReactMarkdown from 'react-markdown'
 
 export default async function ModulePage({
     params,
@@ -69,12 +72,35 @@ export default async function ModulePage({
                 <h1 className="text-2xl font-medium text-gray-900 mb-2">{currentModule.title}</h1>
                 <p className="text-gray-500 mb-8">{currentModule.description}</p>
 
-                <div className="border border-gray-200 rounded-xl p-6 mb-8 bbn-article-body">
-                    <ReactMarkdown>{currentModule.content || 'Lesson content coming soon.'}</ReactMarkdown>
-                </div>
+                
+                {currentModule.widget_type === 'order_simulator_tabs' ? (
+                    <ModuleTabs
+                        labels={[
+                            '1. The basics',
+                            '2. Try it',
+                            '3. After you click buy',
+                        ]}
+                        tab1={
+                            <div className="border border-gray-200 rounded-xl p-6 bbn-article-body">
+                                <ReactMarkdown>
+                                    {currentModule.content || 'Lesson content coming soon.'}
+                                </ReactMarkdown>
+                            </div>
+                        }
+                        tab2={<OrderSimulator />}
+                        tab3={<SettlementJourney />}
+                    />
+                ) : (
+                    <>
+                        <div className="border border-gray-200 rounded-xl p-6 mb-8 bbn-article-body">
+                            <ReactMarkdown>
+                                {currentModule.content || 'Lesson content coming soon.'}
+                            </ReactMarkdown>
+                        </div>
 
-                <ModuleWidget widgetType={currentModule.widget_type} />
-
+                        <ModuleWidget widgetType={currentModule.widget_type} />
+                    </>
+                )}  
                 <ModuleCompletion
                     quiz={currentModule.quiz}
                     widgetType={currentModule.widget_type}
