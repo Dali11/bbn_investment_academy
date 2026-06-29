@@ -27,6 +27,8 @@ function getTopMovers(prices: PriceMover[]) {
 }
 
 export default async function AnalysisPage({
+
+
     searchParams,
 }: {
     searchParams: Promise<{ symbol?: string; sector?: string }>
@@ -64,6 +66,9 @@ export default async function AnalysisPage({
     const featured = filtered[0]
     const rest = filtered.slice(1)
     const { gainers, losers } = getTopMovers(prices ?? [])
+
+
+    await new Promise(resolve => setTimeout(resolve, 5000))
 
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
