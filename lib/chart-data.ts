@@ -94,6 +94,52 @@ export async function getCounterHistory(symbol: string, range: RangeKey): Promis
 }
 
 /**
+ * Fetches absolute index-level history (e.g. MASI) from `mse_indices`
+ * over the given range. MDSI/MFSI don't carry an absolute `value` from
+ * the source site (afx.kwayisi.org only publishes % changes for those
+ * two), so this will return an empty series for any index_code whose
+ * `value` column is always null — callers should fall back to showing
+ * the % change figures directly rather than a chart for those.
+ */
+export async function getIndexHistory(indexCode: string, range: RangeKey): Promise<ChartPoint[]> {
+    const supabase = getServiceClient()
+
+    if (range === '1D' || range === '5D') {
+        const limit = range === '1D' ? 1 : 5
+        const { data: rows } = await supabase
+            .from('mse_indices')
+            .select('index_date, value')
+            .eq('index_code', indexCode.toUpperCase())
+            .not('value', 'is', null)
+            .order('index_date', { ascending: false })
+            .limit(limit)
+
+        return (rows ?? [])
+            .map((r) => ({ date: r.index_date, value: Number(r.value) }))
+            .reverse()
+    }
+
+    const startDate = startDateFor(range)
+    let query = supabase
+        .from('mse_indices')
+        .select('index_date, value')
+        .eq('index_code', indexCode.toUpperCase())
+        .not('value', 'is', null)
+        .order('index_date', { ascending: true })
+
+    if (startDate) {
+        query = query.gte('index_date', startDate)
+    }
+
+    const { data: rows } = await query
+
+    return (rows ?? []).map((r) => ({
+        date: r.index_date,
+        value: Number(r.value),
+    }))
+}
+
+/**
  * Computes an equal-weighted composite index across every counter
  * with price history in the given range.
  *

@@ -26,6 +26,30 @@ export interface MsePrice {
     price_date: string
 }
 
+export type IndexCode = 'MASI' | 'MDSI' | 'MFSI'
+
+export interface MseIndex {
+    id: number
+    index_code: IndexCode
+    value: number | null          // absolute index level — only published for MASI
+    day_change_pct: number | null
+    week_change_pct: number | null
+    ytd_change_pct: number | null
+    market_cap: number | null     // MWK, MASI row only
+    index_date: string
+}
+
+export interface MseIndex {
+    id: number
+    index_code: 'MASI' | 'MDSI' | 'MFSI'
+    value: number | null
+    day_change_pct: number | null
+    week_change_pct: number | null
+    ytd_change_pct: number | null
+    market_cap: number | null
+    index_date: string
+}
+
 export interface Analysis {
     id: string
     counter_id: number | null

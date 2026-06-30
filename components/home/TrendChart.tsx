@@ -19,7 +19,7 @@ function formatTick(dateStr: string, range: RangeKey) {
     return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
 }
 
-export function TrendChart({ symbol }: { symbol?: string | null }) {
+export function TrendChart({ symbol, indexCode, label }: { symbol?: string | null; indexCode?: string | null; label?: string }) {
     const [range, setRange] = useState<RangeKey>('1M')
     const [points, setPoints] = useState<ChartPoint[]>([])
     const [isComposite, setIsComposite] = useState(false)
@@ -33,7 +33,11 @@ export function TrendChart({ symbol }: { symbol?: string | null }) {
         setError(false)
 
         const params = new URLSearchParams({ range })
-        if (symbol) params.set('symbol', symbol)
+        if (indexCode) {
+            params.set('index', indexCode)
+        } else if (symbol) {
+            params.set('symbol', symbol)
+        }
 
         fetch(`/api/chart-data?${params.toString()}`)
             .then((res) => {
@@ -55,7 +59,7 @@ export function TrendChart({ symbol }: { symbol?: string | null }) {
         return () => {
             cancelled = true
         }
-    }, [symbol, range])
+    }, [symbol, indexCode, range])
 
     const isUp = points.length >= 2 && points[points.length - 1].value >= points[0].value
     const lineColor = isUp ? 'var(--color-text-success)' : 'var(--color-text-danger)'
@@ -98,7 +102,7 @@ export function TrendChart({ symbol }: { symbol?: string | null }) {
         <div className="rounded-(--border-radius-lg) border-[0.5px] border-(--color-border-tertiary) bg-(--color-background-secondary) p-3">
             <div className="mb-2 flex items-center justify-between">
                 <p className="text-[10px] font-medium tracking-wider text-(--color-text-tertiary) uppercase">
-                    {isComposite ? 'Market composite' : `${symbol} trend`}
+                    {label ?? (isComposite ? 'Market composite' : `${symbol} trend`)}
                 </p>
                 <div className="flex gap-0.5 overflow-x-auto">
                     {RANGES.map((r) => (
