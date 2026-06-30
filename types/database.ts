@@ -62,6 +62,18 @@ export interface Analysis {
     created_at: string
 }
 
+export type CorporateActionType = 'Dividend' | 'AGM' | 'Rights Issue' | 'Stock Split' | 'Announcement'
+
+export interface CorporateAction {
+    id: number
+    counter_id: number | null
+    type: CorporateActionType
+    headline: string
+    details: string | null
+    action_date: string
+    created_at: string
+}
+
 export interface Course {
     id: string
     title: string

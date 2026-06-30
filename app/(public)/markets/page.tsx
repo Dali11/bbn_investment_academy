@@ -59,6 +59,20 @@ export default async function MarketOverviewPage() {
         return true
     })
 
+    // Recent corporate actions for the widget (latest 6, with symbol joined)
+    const { data: rawActions } = await supabase
+        .from('corporate_actions')
+        .select('type, headline, action_date, mse_counters(symbol)')
+        .order('action_date', { ascending: false })
+        .limit(6)
+
+    const recentActions = (rawActions ?? []).map((a: any) => ({
+        symbol: a.mse_counters?.symbol ?? '—',
+        type: a.type,
+        headline: a.headline,
+        date: a.action_date,
+    }))
+
     // ── Derived stats ──────────────────────────────────────────────────────
     const gainers = latest.filter((p: any) => Number(p.change_pct) > 0)
     const losers = latest.filter((p: any) => Number(p.change_pct) < 0)
@@ -244,7 +258,7 @@ export default async function MarketOverviewPage() {
             {/* ── Movers + Corporate Actions row ──────────────────────────── */}
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.4fr]">
                 <MarketMovers gainers={topGainers} losers={topLosers} />
-                <RecentCorporateActions />
+                <RecentCorporateActions actions={recentActions.length > 0 ? recentActions : undefined} />
             </div>
 
             {/* ── Most active counters ─────────────────────────────────────── */}

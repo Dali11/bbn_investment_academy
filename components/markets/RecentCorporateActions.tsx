@@ -1,7 +1,7 @@
-// components/home/RecentCorporateActions.tsx
-// Static data for now — replace with Supabase fetch once the
-// corporate_actions table exists. The structure mirrors what the
-// /markets/corporate-actions page will consume.
+// components/markets/RecentCorporateActions.tsx
+// Pulls the latest rows from the `corporate_actions` table (added in
+// scripts/corporate_actions_schema.sql). Falls back to seed data if no
+// `actions` prop is passed, so it can still be used in isolation/storybook.
 
 import { Bell } from 'lucide-react'
 import Link from 'next/link'
@@ -13,7 +13,7 @@ export type CorporateAction = {
     date: string // ISO date
 }
 
-// Seed data — real MSE announcements from 2024/2025
+// Seed/fallback data — real MSE announcements from 2024/2025
 const ACTIONS: CorporateAction[] = [
     { symbol: 'ILLOVO', type: 'Dividend', headline: 'Final dividend of MK 4.20 per share declared', date: '2025-03-14' },
     { symbol: 'NBM', type: 'Dividend', headline: 'Interim dividend of MK 12.00 per share', date: '2025-02-28' },
