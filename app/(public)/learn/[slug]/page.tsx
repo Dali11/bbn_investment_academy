@@ -8,6 +8,9 @@ import ModuleTabs from '@/components/modules/ModuleTabs'
 import OrderSimulator from '@/components/modules/OrderSimulator'
 import SettlementJourney from '@/components/modules/SettlementJourney'
 import ReactMarkdown from 'react-markdown'
+import IncomeStatementExplorer from '@/components/modules/IncomeStatementExplorer'
+import CompanyComparison from '@/components/modules/CompanyComparison'
+import RedFlags from '@/components/modules/RedFlags'
 
 export default async function ModulePage({
     params,
@@ -73,7 +76,27 @@ export default async function ModulePage({
                 <p className="text-gray-500 mb-8">{currentModule.description}</p>
 
                 
-                {currentModule.widget_type === 'order_simulator_tabs' ? (
+                {currentModule.widget_type === 'financial_statement_explorer' ? (
+                    <ModuleTabs
+                        labels={[
+                            '1. Read a statement',
+                            '2. Compare two companies',
+                            '3. Red flags',
+                        ]}
+                        tab1={
+                            <div className="border border-gray-200 rounded-xl p-6 bbn-article-body">
+                                <ReactMarkdown>
+                                    {currentModule.content || 'Lesson content coming soon.'}
+                                </ReactMarkdown>
+                                <div className="mt-4">
+                                    <IncomeStatementExplorer />
+                                </div>
+                            </div>
+                        }
+                        tab2={<CompanyComparison />}
+                        tab3={<RedFlags />}
+                    />
+                ) : currentModule.widget_type === 'order_simulator_tabs' ? (
                     <ModuleTabs
                         labels={[
                             '1. The basics',
