@@ -44,6 +44,13 @@ export interface Analysis {
     counter_id: number | null
     title: string
     content: string
+    // Added by scripts/analyses_add_category_migration.sql. Powers the
+    // Analysis Hub tabs on /research — see lib/analysisCategories.ts.
+    category: import('@/lib/analysisCategories').AnalysisCategory
+    // Already used by /research and /research/[id] (hero/thumbnail image)
+    // but was missing from this hand-maintained type file — not a new
+    // DB column, just documenting what already exists.
+    image_url: string | null
     price_at_post: number | null
     pe_at_post: number | null
     market_cap_at_post: number | null

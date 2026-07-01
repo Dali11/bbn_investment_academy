@@ -6,6 +6,7 @@ export type Analysis = {
     id: string
     title: string
     content: string
+    category?: string | null
     created_at: string
     image_url?: string | null
     mse_counters?: Counter[] | Counter | null

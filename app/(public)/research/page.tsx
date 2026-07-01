@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { formatDistanceToNow } from 'date-fns'
 import { Flame, TrendingUp, TrendingDown } from 'lucide-react'
 import { getSymbol, type PriceMover } from '@/types/home'
+import { ANALYSIS_CATEGORIES, AnalysisCategory, getCategoryLabel } from '@/lib/analysisCategories'
+
 
 function getTopMovers(prices: PriceMover[]) {
     const seen = new Set<string>()
@@ -31,15 +33,24 @@ export default async function ResearchPage({
 
     searchParams,
 }: {
-    searchParams: Promise<{ symbol?: string; sector?: string }>
+    searchParams: Promise<{ symbol?: string; sector?: string; category?: string }>
 }) {
     const supabase = await createClient()
-    const { symbol, sector } = await searchParams
+    const { symbol, sector, category } = await searchParams
 
-    // Build the analyses query with optional symbol filter
+    // 'all' (or no param) means every category, most recent first — the
+    // hub's default landing view. Anything else must be a real bucket
+    // from ANALYSIS_CATEGORIES; an unrecognized value falls back to
+    // "all" rather than silently returning zero rows.
+    const activeCategory: AnalysisCategory | null =
+        category && ANALYSIS_CATEGORIES.some(c => c.value === category)
+            ? (category as AnalysisCategory)
+            : null
+
+    // Build the analyses query with optional symbol + category filter
     let query = supabase
         .from('analyses')
-        .select('id, title, content, created_at, image_url, mse_counters(symbol, sector)')
+        .select('id, title, content, category, created_at, image_url, mse_counters(symbol, sector)')
         .eq('published', true)
         .order('created_at', { ascending: false })
         .limit(20)
@@ -47,6 +58,9 @@ export default async function ResearchPage({
     if (symbol) {
         // filter by counter symbol via join
         query = query.eq('mse_counters.symbol', symbol)
+    }
+    if (activeCategory) {
+        query = query.eq('category', activeCategory)
     }
 
     const [{ data: analyses }, { data: prices }] = await Promise.all([
@@ -67,7 +81,22 @@ export default async function ResearchPage({
     const rest = filtered.slice(1)
     const { gainers, losers } = getTopMovers(prices ?? [])
 
-   
+    // Preserves whichever other filter is active when switching tabs —
+    // e.g. clicking "Banking" while on the "Sector Analysis" category tab
+    // should narrow to banking-sector pieces, not reset the category.
+    function buildHref(overrides: { category?: string; sector?: string }) {
+        const params = new URLSearchParams()
+        // 'in' (not `!== undefined`) so passing `sector: undefined` to
+        // explicitly clear the filter is distinguishable from simply not
+        // passing `sector` at all (which should keep the current value).
+        const nextCategory = 'category' in overrides ? overrides.category : category
+        const nextSector = 'sector' in overrides ? overrides.sector : sector
+        if (nextCategory && nextCategory !== 'all') params.set('category', nextCategory)
+        if (nextSector && nextSector !== 'All') params.set('sector', nextSector)
+        const qs = params.toString()
+        return qs ? `/research?${qs}` : '/research'
+    }
+
     return (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_240px]">
 
@@ -78,15 +107,40 @@ export default async function ResearchPage({
                     <p className="text-[13px] text-(--color-text-tertiary)">MSE stock analysis and market commentary by Bena Nkhoma</p>
                 </div>
 
+                {/* Category tabs */}
+                <div className="mb-3 flex flex-wrap gap-2">
+                    <Link
+                        href={buildHref({ category: 'all' })}
+                        className={`rounded-full border-[0.5px] px-3 py-1.5 text-[12px] font-semibold transition-colors no-underline ${!activeCategory
+                                ? 'border-transparent bg-(--color-text-primary) text-(--color-background-primary)'
+                                : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-secondary) hover:border-(--color-border-secondary)'
+                            }`}
+                    >
+                        All
+                    </Link>
+                    {ANALYSIS_CATEGORIES.map((c) => (
+                        <Link
+                            key={c.value}
+                            href={buildHref({ category: c.value })}
+                            className={`rounded-full border-[0.5px] px-3 py-1.5 text-[12px] font-semibold transition-colors no-underline ${activeCategory === c.value
+                                    ? 'border-transparent bg-(--color-text-primary) text-(--color-background-primary)'
+                                    : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-secondary) hover:border-(--color-border-secondary)'
+                                }`}
+                        >
+                            {c.label}
+                        </Link>
+                    ))}
+                </div>
+
                 {/* Sector filter pills */}
                 <div className="mb-6 flex flex-wrap gap-2">
                     {['All', 'Banking', 'Insurance', 'Telecoms', 'Agriculture', 'Energy'].map((f) => (
                         <Link
                             key={f}
-                            href={f === 'All' ? '/research' : `/research?sector=${f}`}
-                            className={`rounded-full border-[0.5px] px-3 py-1 text-[12px] font-medium transition-colors no-underline ${(f === 'All' && !sector) || sector === f
-                                    ? 'border-transparent bg-(--color-text-primary) text-(--color-background-primary)'
-                                    : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-secondary) hover:border-(--color-border-secondary)'
+                            href={buildHref({ sector: f === 'All' ? undefined : f })}
+                            className={`rounded-full border-[0.5px] px-2.5 py-1 text-[11px] font-medium transition-colors no-underline ${(f === 'All' && !sector) || sector === f
+                                    ? 'border-(--color-border-secondary) bg-(--color-background-secondary) text-(--color-text-primary)'
+                                    : 'border-(--color-border-tertiary) bg-(--color-background-primary) text-(--color-text-tertiary) hover:border-(--color-border-secondary)'
                                 }`}
                         >
                             {f}
@@ -112,7 +166,10 @@ export default async function ResearchPage({
                             <div className="p-6">
                                 <div className="mb-3 flex items-center gap-2">
                                     <span className="inline-flex items-center gap-1.5 rounded-(--border-radius-md) bg-(--color-background-warning) px-2.5 py-1 text-[11px] font-medium text-(--color-text-warning)">
-                                        <Flame size={11} aria-hidden="true" /> Latest
+                                        <Flame size={11} aria-hidden="true" /> Featured
+                                    </span>
+                                    <span className="rounded-(--border-radius-md) bg-(--color-background-secondary) px-2.5 py-1 text-[11px] font-medium text-(--color-text-secondary)">
+                                        {getCategoryLabel((featured as any).category)}
                                     </span>
                                     {(featured as any).mse_counters?.symbol && (
                                         <span className="rounded-full bg-(--color-background-info) px-2.5 py-1 text-[11px] font-bold text-(--color-text-info)">
@@ -162,11 +219,19 @@ export default async function ResearchPage({
                                     )}
                                 </div>
                                 <div className="p-4">
-                                    {a.mse_counters?.symbol && (
-                                        <span className="mb-2 inline-block rounded-full bg-(--color-background-info) px-2 py-0.5 text-[10px] font-bold text-(--color-text-info)">
-                                            {a.mse_counters.symbol}
-                                        </span>
-                                    )}
+                                    <div className="mb-2 flex flex-wrap items-center gap-1.5">
+                                        {a.mse_counters?.symbol && (
+                                            <span className="inline-block rounded-full bg-(--color-background-info) px-2 py-0.5 text-[10px] font-bold text-(--color-text-info)">
+                                                {a.mse_counters.symbol}
+                                            </span>
+                                        )}
+                                        {/* Redundant once a single category tab is selected — only useful on "All" */}
+                                        {!activeCategory && (
+                                            <span className="inline-block rounded-full bg-(--color-background-secondary) px-2 py-0.5 text-[10px] font-medium text-(--color-text-tertiary)">
+                                                {getCategoryLabel(a.category)}
+                                            </span>
+                                        )}
+                                    </div>
                                     <p className="mb-2 text-[13px] font-semibold leading-snug text-(--color-text-primary) transition-colors group-hover:text-(--color-text-info)">
                                         {a.title}
                                     </p>
