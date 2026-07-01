@@ -186,6 +186,187 @@ def scrape_indices():
     print(f"\nDone. {updated} indices updated for {index_date}")
 
 
+SUFFIX_MULT = {"K": 1_000, "M": 1_000_000, "B": 1_000_000_000, "T": 1_000_000_000_000}
+
+
+def parse_suffixed_number(s):
+    """'7.74T' -> 7_740_000_000_000.0, '4.36M' -> 4_360_000.0, '1,384' -> 1384.0.
+
+    Returns None if s is empty/unparseable — many fields (Opening Price,
+    Number of Deals) are frequently blank on the source page.
+    """
+    if not s:
+        return None
+    s = s.strip().replace(",", "")
+    m = re.match(r"^([+-]?\d+(?:\.\d+)?)([KMBT])?$", s)
+    if not m:
+        return None
+    value = float(m.group(1))
+    if m.group(2):
+        value *= SUFFIX_MULT[m.group(2)]
+    return value
+
+
+def _label_value(text, label, value_re=r"[\d,]+\.?\d*[KMBT]?"):
+    """Find `label` in flattened page text and grab the value glued/spaced
+    right after it. Returns the raw matched string, or None.
+    """
+    m = re.search(re.escape(label) + r"\s*(" + value_re + r")", text)
+    return m.group(1) if m else None
+
+
+DAY_ROW_RE = re.compile(
+    r"(\d{4}-\d{2}-\d{2})\s*([\d,]+)\s*([\d,]+\.\d{2})\s*([+-][\d,]+\.\d{2})?\s*([+-][\d.]+%)?"
+)
+
+
+def scrape_counter_details():
+    """Scrapes each counter's individual afx.kwayisi.org page (richer than
+    the /mse/ index page): day range, volume, deals, turnover, EPS, P/E,
+    DPS, dividend yield, shares outstanding, market cap, and the last-10-
+    trading-days table.
+
+    Writes daily-changing fields onto mse_prices (today's row) and
+    slow-changing fundamentals onto mse_fundamentals (overwritten in
+    place). Also gap-fills mse_prices for any of the last 10 trading
+    dates missing a row for this counter, using the source's own recent-
+    history table as a safety net against a missed daily run.
+    """
+    headers = {"User-Agent": "Mozilla/5.0"}
+    today = date.today().isoformat()
+
+    counters = supabase.table("mse_counters").select("id, symbol").execute().data
+    if not counters:
+        print("No counters in mse_counters — run scrape_mse() first.")
+        return
+
+    updated = 0
+    for c in counters:
+        counter_id, symbol = c["id"], c["symbol"]
+        url = f"https://afx.kwayisi.org/mse/{symbol.lower()}.html"
+
+        try:
+            res = requests.get(url, headers=headers, timeout=10)
+            if res.status_code != 200:
+                print(f"{symbol}: HTTP {res.status_code} — skipping")
+                continue
+            soup = BeautifulSoup(res.text, "lxml")
+        except Exception as e:
+            print(f"{symbol}: failed to fetch {url}: {e}")
+            continue
+
+        text = soup.get_text(" ", strip=True)
+
+        day_low = parse_suffixed_number(_label_value(text, "Day\u2019s Low Price"))
+        day_high = parse_suffixed_number(_label_value(text, "Day\u2019s High Price"))
+        volume = parse_suffixed_number(_label_value(text, "Traded Volume"))
+        deals = parse_suffixed_number(_label_value(text, "Number of Deals"))
+        turnover = parse_suffixed_number(_label_value(text, "Gross Turnover"))
+        eps = parse_suffixed_number(_label_value(text, "Earnings Per Share"))
+        pe_ratio = parse_suffixed_number(_label_value(text, "Price/Earning Ratio"))
+        dps = parse_suffixed_number(_label_value(text, "Dividend Per Share"))
+        dividend_yield = parse_suffixed_number(
+            _label_value(text, "Dividend Yield", value_re=r"[\d.]+%?")
+        )
+        shares_outstanding = parse_suffixed_number(
+            _label_value(text, "Shares Outstanding")
+        )
+        market_cap = parse_suffixed_number(
+            _label_value(text, "Market Capitalization")
+        )
+
+        price_fields = {}
+        if day_low is not None:
+            price_fields["day_low"] = day_low
+        if day_high is not None:
+            price_fields["day_high"] = day_high
+        if volume is not None:
+            price_fields["volume"] = int(volume)
+        if deals is not None:
+            price_fields["deals"] = int(deals)
+        if turnover is not None:
+            price_fields["turnover"] = turnover
+        if pe_ratio is not None:
+            price_fields["pe_ratio"] = pe_ratio
+        if market_cap is not None:
+            price_fields["market_cap"] = market_cap
+
+        if price_fields:
+            existing = (
+                supabase.table("mse_prices")
+                .select("id")
+                .eq("counter_id", counter_id)
+                .eq("price_date", today)
+                .execute()
+            )
+            if existing.data:
+                supabase.table("mse_prices").update(price_fields).eq(
+                    "id", existing.data[0]["id"]
+                ).execute()
+            else:
+                price_fields.update({"counter_id": counter_id, "price_date": today})
+                supabase.table("mse_prices").insert(price_fields).execute()
+            print(f"{symbol}: updated today's row with {list(price_fields.keys())}")
+            updated += 1
+        else:
+            print(f"{symbol}: no daily fields parsed off {url}")
+
+        fundamentals = {}
+        if eps is not None:
+            fundamentals["eps"] = eps
+        if dps is not None:
+            fundamentals["dps"] = dps
+        if dividend_yield is not None:
+            fundamentals["dividend_yield"] = dividend_yield
+        if shares_outstanding is not None:
+            fundamentals["shares_outstanding"] = shares_outstanding
+
+        if fundamentals:
+            fundamentals["counter_id"] = counter_id
+            supabase.table("mse_fundamentals").upsert(
+                fundamentals, on_conflict="counter_id"
+            ).execute()
+
+        # Gap-fill: backfill any of the last 10 trading days missing from
+        # mse_prices, using the source's own recent-history table. This is
+        # a safety net for a missed daily run, not a redesign — it only
+        # ever inserts rows that don't already exist; never overwrites.
+        day_rows = DAY_ROW_RE.findall(text)
+        filled = 0
+        for row_date, row_volume, row_close, row_change, row_change_pct in day_rows:
+            existing = (
+                supabase.table("mse_prices")
+                .select("id")
+                .eq("counter_id", counter_id)
+                .eq("price_date", row_date)
+                .execute()
+            )
+            if existing.data:
+                continue  # already have this date — leave it alone
+
+            change_pct = None
+            if row_change_pct:
+                try:
+                    change_pct = float(row_change_pct.rstrip("%"))
+                except ValueError:
+                    pass
+
+            supabase.table("mse_prices").insert({
+                "counter_id": counter_id,
+                "price_date": row_date,
+                "price": float(row_close.replace(",", "")),
+                "change_pct": change_pct,
+                "volume": int(row_volume.replace(",", "")) if row_volume else None,
+            }).execute()
+            filled += 1
+
+        if filled:
+            print(f"{symbol}: gap-filled {filled} missing day(s) from 10-day history")
+
+    print(f"\nDone. {updated} counters had detail pages scraped.")
+
+
 if __name__ == "__main__":
     scrape_mse()
     scrape_indices()
+    scrape_counter_details()
