@@ -88,10 +88,19 @@ MAX_OCR_PAGES = 3  # OCR is slow — cap tighter than regular text extraction
 OCR_RESOLUTION_SCALE = 2.0  # ~150 DPI equivalent, matches pdf-reading skill guidance
 EXCERPT_LENGTH = 800
 
-# A flexible date phrase: "Wednesday, 4th February 2026", "17th of December 2025",
-# or "February 4, 2026" — MSE filings aren't consistent about weekday prefixes,
-# ordinal suffixes, or an "of" between day and month.
-DATE_PHRASE = r"(?:[A-Za-z]+day,?\s*)?\d{1,2}(?:st|nd|rd|th)?\s+(?:of\s+)?[A-Za-z]+\s+\d{4}"
+# A flexible date phrase. Handles real-world variants confirmed across
+# both clean-text (FDHB) and OCR'd (NICO) filings:
+#   - "Wednesday, 4th February 2026" / "17th of December 2025" / "Wednesday the 25th of September 2024"
+#   - Ordinal suffixes OCR sometimes misreads as stray punctuation instead
+#     of letters (superscript "th"/"nd"/"rd" -> ", ", ™, %, ° etc. — seen
+#     literally as `29"`, `22™` in real NICO OCR output) — or the suffix
+#     can be missing/correct. The character class below absorbs the
+#     common misreads without requiring them.
+DATE_PHRASE = (
+    r"(?:[A-Za-z]+day,?\s*)?(?:the\s+)?"
+    r"\d{1,2}(?:st|nd|rd|th|[\"'\u2033\u2122%\u00b0]{1,2})?"
+    r"\s+(?:of\s+)?[A-Za-z]+\s+\d{4}"
+)
 
 # Specifically requires "per share" immediately after the number — this is
 # what distinguishes the actual per-share dividend from the aggregate payout
@@ -102,19 +111,18 @@ DIVIDEND_AMOUNT_RE = re.compile(
     re.IGNORECASE,
 )
 
-# Real filings phrase this multiple ways: "will trade ex-dividend from
-# <date>", or "the ex-dividend date is <date>" — the "is" here isn't
-# whitespace, so the connector needs to allow it explicitly rather than
-# just [:\s]*.
+# Multi-word connector phrases use \s+ (not a literal space) between every
+# word — confirmed necessary: PDF-wrapped OCR text regularly breaks a line
+# right between words of these phrases (e.g. "payable\non Monday...",
+# "ex-\ndividend date is..."), and a literal " " in the pattern doesn't
+# match a newline.
 EX_DATE_RE = re.compile(
-    rf"(?:ex[- ]dividend (?:date|from)|trade ex-dividend from)\s*(?:is|:)?\s*({DATE_PHRASE})",
+    rf"(?:ex-?\s*dividend\s+(?:date|from)|trade\s+ex-?\s*dividend\s+from)\s*(?:is|:)?\s*({DATE_PHRASE})",
     re.IGNORECASE,
 )
 
-# Similarly: "will be paid on <date>", "paid on <date>", or "payable on
-# <date>" all appear across different filings.
 PAYMENT_DATE_RE = re.compile(
-    rf"(?:payment date|will be paid on|paid on|payable on)[:\s]*({DATE_PHRASE})",
+    rf"(?:payment\s+date|will\s+be\s+paid\s+on|paid\s+on|payable\s+on)[:\s]*({DATE_PHRASE})",
     re.IGNORECASE,
 )
 
@@ -217,6 +225,16 @@ def clean_excerpt(text: str) -> str:
     return collapsed[:cut] + "…"
 
 
+def clean_date(text: str) -> str:
+    """Collapse whitespace AND strip the stray punctuation OCR sometimes
+    substitutes for ordinal suffixes (confirmed in real output: 29" or
+    22™ instead of 29th/22nd) — the digit/month/year is unambiguous
+    either way, this just makes the displayed string readable.
+    """
+    collapsed = clean_excerpt(text)
+    return re.sub(r"(\d{1,2})(?:st|nd|rd|th|[\"'\u2033\u2122%\u00b0]{1,2})?", r"\1", collapsed, count=1)
+
+
 def build_dividend_summary(text: str) -> str | None:
     """Best-effort structured line for Dividend-type rows. Returns None
     if we can't confidently find an amount — better to fall back to the
@@ -230,11 +248,11 @@ def build_dividend_summary(text: str) -> str | None:
 
     ex_match = EX_DATE_RE.search(text)
     if ex_match:
-        parts.append(f"Ex-dividend date: {ex_match.group(1)}")
+        parts.append(f"Ex-dividend date: {clean_date(ex_match.group(1))}")
 
     pay_match = PAYMENT_DATE_RE.search(text)
     if pay_match:
-        parts.append(f"Payment date: {pay_match.group(1)}")
+        parts.append(f"Payment date: {clean_date(pay_match.group(1))}")
 
     return " | ".join(parts)
 
