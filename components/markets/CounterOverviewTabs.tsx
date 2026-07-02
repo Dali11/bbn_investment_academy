@@ -5,8 +5,9 @@
 // component only owns which tab is active.
 'use client'
 
-import { useState } from 'react'
-import { Bell } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import Link from 'next/link'
+import { Bell, ChevronRight } from 'lucide-react'
 import { TrendChart } from '@/components/home/TrendChart'
 
 type Action = {
@@ -14,6 +15,7 @@ type Action = {
     headline: string
     details: string | null
     action_date: string
+    slug: string | null
 }
 
 type NewsItem = {
@@ -127,6 +129,7 @@ function ActionList({ actions, emptyMessage }: { actions: Action[]; emptyMessage
         <div className="overflow-hidden rounded-(--border-radius-lg) border-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary) shadow-(--shadow-card)">
             {actions.map((a, i) => {
                 const { bg, text } = TYPE_COLORS[a.type] ?? TYPE_COLORS.Announcement
+                const href = a.slug ? `/markets/corporate-actions/${a.slug}` : null
                 return (
                     <div
                         key={i}
@@ -139,9 +142,28 @@ function ActionList({ actions, emptyMessage }: { actions: Action[]; emptyMessage
                             {a.type}
                         </span>
                         <div className="min-w-0 flex-1">
-                            <p className="text-[13px] text-(--color-text-primary) leading-snug">{a.headline}</p>
+                            {href ? (
+                                <Link
+                                    href={href}
+                                    className="text-[13px] text-(--color-text-primary) leading-snug no-underline hover:underline"
+                                >
+                                    {a.headline}
+                                </Link>
+                            ) : (
+                                <p className="text-[13px] text-(--color-text-primary) leading-snug">{a.headline}</p>
+                            )}
                             {a.details && (
-                                <p className="mt-0.5 text-[12px] text-(--color-text-secondary) leading-snug">{a.details}</p>
+                                href ? (
+                                    <Link href={href} className="no-underline">
+                                        <p className="mt-0.5 line-clamp-2 sm:line-clamp-1 text-[12px] text-(--color-text-secondary) leading-snug">
+                                            {a.details}
+                                        </p>
+                                    </Link>
+                                ) : (
+                                    <p className="mt-0.5 line-clamp-2 sm:line-clamp-1 text-[12px] text-(--color-text-secondary) leading-snug">
+                                        {a.details}
+                                    </p>
+                                )
                             )}
                             <p className="mt-1 text-[11px] text-(--color-text-tertiary)">{formatDate(a.action_date)}</p>
                         </div>
@@ -181,7 +203,7 @@ function NewsList({ items }: { items: NewsItem[] }) {
                             <p className="text-[13px] text-(--color-text-primary) leading-snug">{n.headline}</p>
                         )}
                         {n.summary && (
-                            <p className="mt-0.5 text-[12px] text-(--color-text-secondary) leading-snug">{n.summary}</p>
+                            <p className="mt-0.5 line-clamp-2 sm:line-clamp-1 text-[12px] text-(--color-text-secondary) leading-snug">{n.summary}</p>
                         )}
                         <p className="mt-1 text-[11px] text-(--color-text-tertiary)">
                             {n.source_name ? `${n.source_name} · ` : ''}
@@ -206,6 +228,46 @@ export function CounterOverviewTabs({
     newsItems: NewsItem[]
 }) {
     const [tab, setTab] = useState<TabKey>('overview')
+    const [stickyTop, setStickyTop] = useState(0)
+    const [canScrollRight, setCanScrollRight] = useState(false)
+    const tabScrollRef = useRef<HTMLDivElement>(null)
+
+    // Stick the tab bar directly under the site header — measured at
+    // runtime (not a hardcoded px value) since the header's height
+    // differs between mobile (ticker wraps) and desktop.
+    useEffect(() => {
+        const header = document.getElementById('site-header')
+        if (!header) return
+
+        const update = () => setStickyTop(header.getBoundingClientRect().height)
+        update()
+
+        const observer = new ResizeObserver(update)
+        observer.observe(header)
+        return () => observer.disconnect()
+    }, [])
+
+    // Mobile: the 5 tabs overflow the viewport with no visual cue that
+    // there's more to scroll to. Show a fade + chevron hint whenever
+    // there's unscrolled content to the right, and hide it once the
+    // user has scrolled to the end.
+    useEffect(() => {
+        const el = tabScrollRef.current
+        if (!el) return
+
+        const update = () => {
+            setCanScrollRight(el.scrollWidth - el.clientWidth - el.scrollLeft > 4)
+        }
+        update()
+
+        el.addEventListener('scroll', update, { passive: true })
+        const observer = new ResizeObserver(update)
+        observer.observe(el)
+        return () => {
+            el.removeEventListener('scroll', update)
+            observer.disconnect()
+        }
+    }, [])
 
     const announcements = actions.filter((a) => !['Dividend', 'Report'].includes(a.type))
     const reports = actions.filter((a) => a.type === 'Report')
@@ -213,74 +275,91 @@ export function CounterOverviewTabs({
 
     return (
         <div>
-            {/* Tab bar */}
-            <div className="mb-5 flex gap-1 overflow-x-auto border-b-[0.5px] border-(--color-border-tertiary)">
-                {TABS.map((t) => (
-                    <button
-                        key={t.key}
-                        onClick={() => setTab(t.key)}
-                        className={`shrink-0 border-b-2 px-3.5 py-2.5 text-[13px] whitespace-nowrap transition-colors ${tab === t.key
-                                ? 'border-(--color-text-primary) font-medium text-(--color-text-primary)'
-                                : 'border-transparent text-(--color-text-secondary) hover:text-(--color-text-primary)'
-                            }`}
-                    >
-                        {t.label}
-                    </button>
-                ))}
+            {/* Tab bar — sticks under the site header once scrolled to it */}
+            <div
+                className="sticky z-40 -mx-2 border-b-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary) px-2 sm:mx-0 sm:px-0"
+                style={{ top: stickyTop }}
+            >
+                <div className="relative">
+                    <div ref={tabScrollRef} className="mb-0 flex gap-1 overflow-x-auto">
+                        {TABS.map((t) => (
+                            <button
+                                key={t.key}
+                                onClick={() => setTab(t.key)}
+                                className={`shrink-0 border-b-2 px-3.5 py-2.5 text-[13px] whitespace-nowrap transition-colors ${tab === t.key
+                                        ? 'border-(--color-text-warning) font-medium text-(--color-text-warning)'
+                                        : 'border-transparent text-(--color-text-secondary) hover:text-(--color-text-primary)'
+                                    }`}
+                            >
+                                {t.label}
+                            </button>
+                        ))}
+                    </div>
+                    {canScrollRight && (
+                        <div
+                            className="pointer-events-none absolute top-0 right-0 flex h-full w-10 items-center justify-end bg-gradient-to-l from-(--color-background-primary) to-transparent"
+                            aria-hidden="true"
+                        >
+                            <ChevronRight size={14} className="text-(--color-text-tertiary)" />
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {tab === 'overview' && (
-                <div className="space-y-5">
-                    {/* Open / prev close / day range strip */}
-                    <div className="flex flex-wrap gap-x-5 gap-y-2 border-b-[0.5px] border-(--color-border-tertiary) pb-4 text-[12px] text-(--color-text-secondary)">
-                        <span>Open <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.open)}</strong></span>
-                        <span>Prev close <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.prevClose)}</strong></span>
-                        <span>Day high <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.dayHigh)}</strong></span>
-                        <span>Day low <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.dayLow)}</strong></span>
+            <div className="mt-5">
+                {tab === 'overview' && (
+                    <div className="space-y-5">
+                        {/* Open / prev close / day range strip */}
+                        <div className="flex flex-wrap gap-x-5 gap-y-2 border-b-[0.5px] border-(--color-border-tertiary) pb-4 text-[12px] text-(--color-text-secondary)">
+                            <span>Open <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.open)}</strong></span>
+                            <span>Prev close <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.prevClose)}</strong></span>
+                            <span>Day high <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.dayHigh)}</strong></span>
+                            <span>Day low <strong className="font-medium text-(--color-text-primary)">{formatPrice(overview.dayLow)}</strong></span>
+                        </div>
+
+                        {/* Stat list */}
+                        <StatList
+                            stats={[
+                                { label: 'Volume', value: formatCompact(overview.volume) },
+                                { label: 'Shares traded 3mo', value: formatCompact(overview.sharesTraded3mo) },
+                                { label: 'P/E ratio', value: overview.peRatio != null ? overview.peRatio.toFixed(1) : '—' },
+                                { label: 'Market cap', value: overview.marketCap },
+                                { label: 'EPS', value: overview.eps != null ? overview.eps.toFixed(2) : '—' },
+                                { label: 'Earnings yield', value: overview.earningsYield != null ? `${overview.earningsYield.toFixed(2)}%` : '—' },
+                                { label: 'Dividend yield', value: overview.dividendYield != null ? `${overview.dividendYield.toFixed(2)}%` : '—' },
+                                { label: 'Payout ratio', value: overview.payoutRatio != null ? `${overview.payoutRatio.toFixed(0)}%` : '—' },
+                                { label: '52-wk high', value: formatPrice(overview.week52High) },
+                                { label: '52-wk low', value: formatPrice(overview.week52Low) },
+                            ]}
+                        />
+
+                        {/* Price + volume chart */}
+                        <div className="rounded-(--border-radius-lg) border-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary) p-4 shadow-(--shadow-card)">
+                            <TrendChart symbol={symbol} showVolume defaultRange="6M" />
+                        </div>
                     </div>
+                )}
 
-                    {/* Stat list */}
-                    <StatList
-                        stats={[
-                            { label: 'Volume', value: formatCompact(overview.volume) },
-                            { label: 'Shares traded 3mo', value: formatCompact(overview.sharesTraded3mo) },
-                            { label: 'P/E ratio', value: overview.peRatio != null ? overview.peRatio.toFixed(1) : '—' },
-                            { label: 'Market cap', value: overview.marketCap },
-                            { label: 'EPS', value: overview.eps != null ? overview.eps.toFixed(2) : '—' },
-                            { label: 'Earnings yield', value: overview.earningsYield != null ? `${overview.earningsYield.toFixed(2)}%` : '—' },
-                            { label: 'Dividend yield', value: overview.dividendYield != null ? `${overview.dividendYield.toFixed(2)}%` : '—' },
-                            { label: 'Payout ratio', value: overview.payoutRatio != null ? `${overview.payoutRatio.toFixed(0)}%` : '—' },
-                            { label: '52-wk high', value: formatPrice(overview.week52High) },
-                            { label: '52-wk low', value: formatPrice(overview.week52Low) },
-                        ]}
-                    />
-
-                    {/* Price + volume chart */}
-                    <div className="rounded-(--border-radius-lg) border-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary) p-4 shadow-(--shadow-card)">
-                        <TrendChart symbol={symbol} showVolume defaultRange="6M" />
+                {tab === 'ann' && (
+                    <div>
+                        <div className="mb-2 flex items-center gap-2">
+                            <Bell size={14} className="text-(--color-text-tertiary)" aria-hidden="true" />
+                            <h2 className="text-[13px] font-bold tracking-wide text-(--color-text-tertiary) uppercase">Announcements</h2>
+                        </div>
+                        <ActionList actions={announcements} emptyMessage={`No announcements recorded yet for ${symbol}.`} />
                     </div>
-                </div>
-            )}
+                )}
 
-            {tab === 'ann' && (
-                <div>
-                    <div className="mb-2 flex items-center gap-2">
-                        <Bell size={14} className="text-(--color-text-tertiary)" aria-hidden="true" />
-                        <h2 className="text-[13px] font-bold tracking-wide text-(--color-text-tertiary) uppercase">Announcements</h2>
-                    </div>
-                    <ActionList actions={announcements} emptyMessage={`No announcements recorded yet for ${symbol}.`} />
-                </div>
-            )}
+                {tab === 'news' && <NewsList items={newsItems} />}
 
-            {tab === 'news' && <NewsList items={newsItems} />}
+                {tab === 'reports' && (
+                    <ActionList actions={reports} emptyMessage={`No reports recorded yet for ${symbol}.`} />
+                )}
 
-            {tab === 'reports' && (
-                <ActionList actions={reports} emptyMessage={`No reports recorded yet for ${symbol}.`} />
-            )}
-
-            {tab === 'div' && (
-                <ActionList actions={dividends} emptyMessage={`No dividend history recorded yet for ${symbol}.`} />
-            )}
+                {tab === 'div' && (
+                    <ActionList actions={dividends} emptyMessage={`No dividend history recorded yet for ${symbol}.`} />
+                )}
+            </div>
         </div>
     )
 }

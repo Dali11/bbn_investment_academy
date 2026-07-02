@@ -45,7 +45,7 @@ export default async function PublicLayout({
         <html lang="en">
             <body>
                 <div className="min-h-screen bg-(--color-background-tertiary)">
-                    <header className="sticky top-0 z-50 border-b-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary)">
+                    <header id="site-header" className="sticky top-0 z-50 border-b-[0.5px] border-(--color-border-tertiary) bg-(--color-background-primary)">
                         <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-6 py-2.5">
                             <div className="flex items-center gap-6">
                                 <Link href="/" className="text-[18px] font-medium text-(--color-text-primary) no-underline">

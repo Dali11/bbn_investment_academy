@@ -134,7 +134,7 @@ export default async function CounterPage({
     // Dividends tabs all slice this same set client-side).
     const { data: rawActions } = await supabase
         .from('corporate_actions')
-        .select('type, headline, details, action_date')
+        .select('type, headline, details, action_date, slug')
         .eq('counter_id', counter.id)
         .order('action_date', { ascending: false })
         .limit(100)
