@@ -262,7 +262,7 @@ export default async function ResearchPage({
                             {gainers.map((p, i) => {
                                 const sym = getSymbol(p.mse_counters)
                                 return (
-                                    <Link key={i} href={`/mse/${sym?.toLowerCase()}`} className={`flex items-center justify-between px-4 py-2 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < gainers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}>
+                                    <Link key={i} href={`/stocks/${sym?.toLowerCase()}`} className={`flex items-center justify-between px-4 py-2 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < gainers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}>
                                         <span className="text-[12px] font-semibold text-(--color-text-primary)">{sym}</span>
                                         <span className="font-mono text-[12px] font-semibold text-(--color-text-success)">+{Number(p.change_pct).toFixed(2)}%</span>
                                     </Link>
@@ -281,7 +281,7 @@ export default async function ResearchPage({
                             {losers.map((p, i) => {
                                 const sym = getSymbol(p.mse_counters)
                                 return (
-                                    <Link key={i} href={`/mse/${sym?.toLowerCase()}`} className={`flex items-center justify-between px-4 py-2 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < losers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}>
+                                    <Link key={i} href={`/stocks/${sym?.toLowerCase()}`} className={`flex items-center justify-between px-4 py-2 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < losers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}>
                                         <span className="text-[12px] font-semibold text-(--color-text-primary)">{sym}</span>
                                         <span className="font-mono text-[12px] font-semibold text-(--color-text-danger)">{Number(p.change_pct).toFixed(2)}%</span>
                                     </Link>
@@ -290,7 +290,7 @@ export default async function ResearchPage({
                         </div>
                     )}
 
-                    <Link href="/mse" className="block border-t-[0.5px] border-(--color-border-tertiary) px-4 py-2.5 text-center text-[11px] font-medium text-(--color-text-info) no-underline hover:underline">
+                    <Link href="/stocks" className="block border-t-[0.5px] border-(--color-border-tertiary) px-4 py-2.5 text-center text-[11px] font-medium text-(--color-text-info) no-underline hover:underline">
                         View all on MSE →
                     </Link>
                 </div>

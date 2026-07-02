@@ -95,7 +95,7 @@ export default async function AccountPage() {
                         <Star size={15} className="text-(--color-text-warning)" />
                         <h2 className="text-[15px] font-bold text-(--color-text-primary)">Watchlist</h2>
                     </div>
-                    <Link href="/mse" className="text-[12px] text-(--color-text-info) no-underline hover:underline">
+                    <Link href="/stocks" className="text-[12px] text-(--color-text-info) no-underline hover:underline">
                         Browse MSE →
                     </Link>
                 </div>
@@ -108,7 +108,7 @@ export default async function AccountPage() {
                             return (
                                 <Link
                                     key={sym}
-                                    href={`/mse/${sym?.toLowerCase()}`}
+                                    href={`/stocks/${sym?.toLowerCase()}`}
                                     className={`flex items-center justify-between px-4 py-3 no-underline hover:bg-(--color-background-secondary) transition-colors ${i < watchlist.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''
                                         }`}
                                 >
@@ -134,7 +134,7 @@ export default async function AccountPage() {
                             Visit any MSE counter page and tap the star to add it here.
                         </p>
                         <Link
-                            href="/mse"
+                            href="/stocks"
                             className="inline-block rounded-(--border-radius-md) bg-(--color-background-warning) px-4 py-1.5 text-[12px] font-semibold text-(--color-text-warning) no-underline hover:opacity-90"
                         >
                             Browse counters →

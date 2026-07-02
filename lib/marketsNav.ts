@@ -29,7 +29,7 @@ export const marketsLinks: MarketsLink[] = [
     },
     {
         label: 'Stocks',
-        href: '/mse',
+        href: '/stocks',
         description: 'All listed companies & live prices',
         icon: 'stocks',
     },

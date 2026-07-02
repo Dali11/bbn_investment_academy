@@ -117,7 +117,7 @@ export function IposList({ ipos }: { ipos: IpoRow[] }) {
                                     <p className="text-[13px] font-medium text-(--color-text-primary) leading-snug">
                                         {ipo.symbol ? (
                                             <Link
-                                                href={`/mse/${ipo.symbol.toLowerCase()}`}
+                                                href={`/stocks/${ipo.symbol.toLowerCase()}`}
                                                 className="text-(--color-text-primary) no-underline hover:underline"
                                             >
                                                 {ipo.company_name}

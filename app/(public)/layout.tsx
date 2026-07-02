@@ -37,7 +37,6 @@ export default async function PublicLayout({
         { label: 'Research', href: '/research' },
         { label: 'Learn', href: '/learn' },
         { label: 'Community', href: '/community' },
-        { label: 'MSE', href: '/mse' },
         { label: 'Watchlist', href: '/watchlist' },
     ]
 
@@ -91,7 +90,7 @@ export default async function PublicLayout({
                                     return (
                                         <Link
                                             key={`${sym}-${i}`}
-                                            href={`/mse/${sym?.toLowerCase()}`}
+                                            href={`/stocks/${sym?.toLowerCase()}`}
                                             className="flex items-center gap-1.5 border-r-[0.5px] border-(--color-border-tertiary) px-4 text-sm whitespace-nowrap no-underline"
                                         >
                                             <span className="font-semibold text-(--color-text-primary)">{sym}</span>

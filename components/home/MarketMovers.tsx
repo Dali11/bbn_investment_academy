@@ -34,7 +34,7 @@ function MoverSection({
                     return (
                         <Link
                             key={i}
-                            href={`/mse/${symbol?.toLowerCase()}`}
+                            href={`/stocks/${symbol?.toLowerCase()}`}
                             className={`flex items-center justify-between px-4 py-2.5 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < movers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}
                         >
                             <span className="text-[13px] font-medium text-(--color-text-primary)">{symbol}</span>

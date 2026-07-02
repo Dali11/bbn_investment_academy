@@ -49,7 +49,7 @@ function EventRow({ event, isLast }: { event: CalendarEvent; isLast: boolean }) 
                     {event.symbol && (
                         <>
                             <Link
-                                href={`/mse/${event.symbol.toLowerCase()}`}
+                                href={`/stocks/${event.symbol.toLowerCase()}`}
                                 className="font-semibold text-(--color-text-primary) no-underline hover:underline"
                             >
                                 {event.symbol}

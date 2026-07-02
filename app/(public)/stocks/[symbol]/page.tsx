@@ -168,7 +168,7 @@ export default async function CounterPage({
         <div className="space-y-6">
             {/* Back link */}
             <Link
-                href="/mse"
+                href="/stocks"
                 className="inline-flex items-center gap-1.5 text-[13px] text-(--color-text-tertiary) no-underline hover:text-(--color-text-primary)"
             >
                 <ArrowLeft size={14} aria-hidden="true" />

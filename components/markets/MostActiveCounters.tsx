@@ -62,7 +62,7 @@ export function MostActiveCounters({ counters }: { counters: ActiveCounter[] }) 
                     return (
                         <Link
                             key={c.symbol}
-                            href={`/mse/${c.symbol.toLowerCase()}`}
+                            href={`/stocks/${c.symbol.toLowerCase()}`}
                             className={`grid grid-cols-[1fr_80px_70px_80px] gap-2 items-center px-4 py-2.5 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < counters.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''}`}
                         >
                             <div>

@@ -115,14 +115,14 @@ export default async function AnalysisArticlePage({
                     {symbol && (
                         <>
                             <span>›</span>
-                            <Link href={`/mse/${symbol.toLowerCase()}`} className="text-(--color-text-info) no-underline hover:underline">{symbol}</Link>
+                            <Link href={`/stocks/${symbol.toLowerCase()}`} className="text-(--color-text-info) no-underline hover:underline">{symbol}</Link>
                         </>
                     )}
                 </div>
 
                 {/* Symbol badge */}
                 {symbol && (
-                    <Link href={`/mse/${symbol.toLowerCase()}`} className="no-underline">
+                    <Link href={`/stocks/${symbol.toLowerCase()}`} className="no-underline">
                         <span className="mb-4 inline-flex items-center gap-2 rounded-(--border-radius-md) bg-(--color-background-info) px-3 py-1.5 text-[12px] font-bold text-(--color-text-info)">
                             {symbol} — {company}
                         </span>
@@ -253,7 +253,7 @@ export default async function AnalysisArticlePage({
                                 </div>
                             )}
                         </div>
-                        <Link href={`/mse/${symbol.toLowerCase()}`} className="mt-3 block rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) py-2 text-center text-[12px] font-semibold text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)">
+                        <Link href={`/stocks/${symbol.toLowerCase()}`} className="mt-3 block rounded-(--border-radius-md) border-[0.5px] border-(--color-border-secondary) py-2 text-center text-[12px] font-semibold text-(--color-text-primary) no-underline transition-colors hover:bg-(--color-background-secondary)">
                             View {symbol} on MSE →
                         </Link>
                     </div>

@@ -73,7 +73,7 @@ export default function SidebarClient({ profile }: any) {
                 <div>
                     <button
                         onClick={() => setMseOpen(!mseOpen)}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${pathname.startsWith('/mse') ? 'bg-amber-50 text-amber-700 font-medium' : 'text-gray-600 hover:bg-amber-50 hover:text-amber-700'}`}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${pathname.startsWith('/stocks') ? 'bg-amber-50 text-amber-700 font-medium' : 'text-gray-600 hover:bg-amber-50 hover:text-amber-700'}`}
                     >
                         <div className="flex items-center gap-2.5">
                             <span>🏦</span>
@@ -84,10 +84,10 @@ export default function SidebarClient({ profile }: any) {
                     {mseOpen && (
                         <div className="ml-4 mt-0.5 space-y-0.5">
                             {[
-                                { href: '/mse', label: 'MSE Tracker' },
-                                { href: '/mse/watchlist', label: 'Watchlist' },
-                                { href: '/mse/rankings', label: 'Rankings' },
-                                { href: '/mse/compare', label: 'Compare' },
+                                { href: '/stocks', label: 'MSE Tracker' },
+                                { href: '/stocks/watchlist', label: 'Watchlist' },
+                                { href: '/stocks/rankings', label: 'Rankings' },
+                                { href: '/stocks/compare', label: 'Compare' },
                             ].map(item => (
                                 <Link
                                     key={item.href}

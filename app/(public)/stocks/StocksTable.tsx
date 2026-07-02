@@ -203,7 +203,7 @@ export function StocksTable({ stocks }: { stocks: StockRow[] }) {
                                         {/* Symbol */}
                                         <td className="px-3 py-3 whitespace-nowrap">
                                             <Link
-                                                href={`/mse/${s.symbol.toLowerCase()}`}
+                                                href={`/stocks/${s.symbol.toLowerCase()}`}
                                                 className="font-bold text-[13px] text-(--color-text-primary) no-underline hover:underline hover:decoration-(--color-text-warning)"
                                             >
                                                 {s.symbol}

@@ -115,7 +115,7 @@ export default function SearchBox() {
                                     {results.counters.map((c: any) => (
                                         <Link
                                             key={c.symbol}
-                                            href={`/mse/${c.symbol.toLowerCase()}`}
+                                            href={`/stocks/${c.symbol.toLowerCase()}`}
                                             onClick={() => setOpen(false)}
                                             className="flex items-center justify-between px-4 py-2.5 no-underline hover:bg-(--color-background-secondary) border-b-[0.5px] border-(--color-border-tertiary) last:border-0"
                                         >

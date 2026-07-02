@@ -84,7 +84,7 @@ export default async function CorporateActionDetailPage({
                             {counter ? (
                                 <>
                                     <Link
-                                        href={`/mse/${counter.symbol.toLowerCase()}`}
+                                        href={`/stocks/${counter.symbol.toLowerCase()}`}
                                         className="font-semibold text-(--color-text-primary) no-underline hover:underline"
                                     >
                                         {counter.symbol}

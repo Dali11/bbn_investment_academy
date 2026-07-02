@@ -79,7 +79,7 @@ export function NewsFeed({ items }: { items: NewsItemRow[] }) {
                                     {n.symbol && (
                                         <>
                                             <Link
-                                                href={`/mse/${n.symbol.toLowerCase()}`}
+                                                href={`/stocks/${n.symbol.toLowerCase()}`}
                                                 className="font-semibold text-(--color-text-primary) no-underline hover:underline"
                                             >
                                                 {n.symbol}

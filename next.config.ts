@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
         // columns) — retired in favor of /mse as the canonical stocks
         // list. Keep this redirect for any bookmarked/indexed links.
         source: "/markets/stocks",
-        destination: "/mse",
+        destination: "/stocks",
         permanent: true,
       },
     ];

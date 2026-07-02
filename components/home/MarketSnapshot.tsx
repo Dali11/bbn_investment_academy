@@ -22,7 +22,7 @@ export function MarketSnapshot({ movers }: { movers: PriceMover[] }) {
           return (
             <Link
               key={i}
-              href={`/mse/${symbol?.toLowerCase()}`}
+              href={`/stocks/${symbol?.toLowerCase()}`}
               className={`flex items-center justify-between gap-3 px-4 py-2.5 no-underline transition-colors hover:bg-(--color-background-secondary) ${i < movers.length - 1 ? 'border-b-[0.5px] border-(--color-border-tertiary)' : ''
                 }`}
             >

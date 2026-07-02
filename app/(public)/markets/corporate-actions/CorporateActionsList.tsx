@@ -118,7 +118,7 @@ export function CorporateActionsList({ actions }: { actions: CorporateActionRow[
                                     <p className="mt-1 text-[11px] text-(--color-text-tertiary)">
                                         {a.symbol ? (
                                             <Link
-                                                href={`/mse/${a.symbol.toLowerCase()}`}
+                                                href={`/stocks/${a.symbol.toLowerCase()}`}
                                                 className="font-semibold text-(--color-text-primary) no-underline hover:underline"
                                             >
                                                 {a.symbol}
